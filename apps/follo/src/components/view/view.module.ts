@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ViewResolver } from './view.resolver';
 
-@Module({})
+@Module({
+  providers: [ViewResolver]
+})
 export class ViewModule {}

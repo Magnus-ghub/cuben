@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { BoardArticleResolver } from './board-article.resolver';
 
-@Module({})
+@Module({
+  providers: [BoardArticleResolver]
+})
 export class BoardArticleModule {}

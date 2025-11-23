@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { FollowResolver } from './follow.resolver';
 
-@Module({})
+@Module({
+  providers: [FollowResolver]
+})
 export class FollowModule {}

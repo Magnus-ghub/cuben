@@ -8,6 +8,14 @@ import { CommentModule } from './comment/comment.module';
 import { BoardArticleModule } from './board-article/board-article.module';
 
 @Module({
-  imports: [MemberModule, ProductModule, LikeModule, FollowModule, ViewModule, CommentModule, BoardArticleModule]
+  imports: [
+    MemberModule, 
+    ProductModule, 
+    LikeModule, 
+    FollowModule, 
+    ViewModule, 
+    CommentModule, 
+    BoardArticleModule
+  ]
 })
 export class ComponentsModule {}

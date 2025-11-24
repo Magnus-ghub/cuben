@@ -44,4 +44,13 @@ export class MemberResolver {
 		delete input._id;
 		return await this.memberService.updateMember(memberId, input);
 	}
+
+    @UseGuards(AuthGuard)
+	@Query(() => String)
+	public async checkAuth(@AuthMember('memberNick') memberNick: string): Promise<string> {
+		console.log('Query: checkAuth');
+		console.log('memberNick:', memberNick);
+
+		return `Hi ${memberNick}`;
+	}
 }

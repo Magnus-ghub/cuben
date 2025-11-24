@@ -2,7 +2,7 @@ import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import { MemberService } from './member.service';
 import { Member } from '../../libs/dto/member/member';
 import { LoginInput, MemberInput } from '../../libs/dto/member/member.input';
-import { InternalServerErrorException, UsePipes, ValidationPipe } from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 
 @Resolver()
 export class MemberResolver {

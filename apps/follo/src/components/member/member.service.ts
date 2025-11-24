@@ -7,6 +7,7 @@ import { Message } from '../../libs/enums/common.enum';
 import { MemberStatus } from '../../libs/enums/member.enum';
 import { AuthService } from '../auth/auth.service';
 import { T } from '../../libs/types/common';
+import { MemberUpdate } from '../../libs/dto/member/member.update';
 
 @Injectable()
 export class MemberService {
@@ -58,6 +59,27 @@ export class MemberService {
         if(!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
 
+        // meLiked
+        //meFollowed
         return targetMember;
     }
+
+    public async updateMember(memberId: ObjectId, input: MemberUpdate): Promise<Member> {
+       const result: Member = await this.memberModel
+            .findOneAndUpdate(
+                {
+                    _id: memberId,
+                    memberStatus: MemberStatus.ACTIVE,
+                },
+                input,
+                { new: true},
+            )
+            .exec();
+        if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED); 
+
+        result.accessToken = await this.authService.createToken(result);
+        return result;
+    }
+
+
 }

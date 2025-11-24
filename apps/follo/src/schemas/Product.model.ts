@@ -104,7 +104,7 @@ const ProductSchema = new Schema(
 			type: Date,
 		},
 	},
-	{ timestamps: true, collection: 'properties' },
+	{ timestamps: true, collection: 'products' },
 );
 
 ProductSchema.index({ productType: 1, productLocation: 1, productTitle: 1, productPrice: 1 }, { unique: true });

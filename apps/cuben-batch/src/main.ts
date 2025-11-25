@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { FolloBatchModule } from './follo-batch.module';
+import { CubenBatchModule } from './cuben-batch.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(FolloBatchModule);
+  const app = await NestFactory.create(CubenBatchModule);
   await app.listen(process.env.PORT_BATCH ?? 3000);
 }
 bootstrap();

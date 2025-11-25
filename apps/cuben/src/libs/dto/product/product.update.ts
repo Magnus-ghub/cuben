@@ -1,6 +1,6 @@
 import { Field, InputType, Int } from "@nestjs/graphql";
 import { IsInt, IsNotEmpty, IsOptional, Length, Min } from "class-validator";
-import { deleteModel, ObjectId } from "mongoose";
+import { ObjectId } from "mongoose";
 import { ProductLocation, ProductStatus, ProductType } from "../../enums/product.enum";
 
 @InputType()

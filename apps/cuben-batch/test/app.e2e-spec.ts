@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { FolloBatchModule } from './../src/follo-batch.module';
+import { CubenBatchModule } from '../src/cuben-batch.module';
 
-describe('FolloBatchController (e2e)', () => {
+describe('CubenBatchController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [FolloBatchModule],
+      imports: [CubenBatchModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

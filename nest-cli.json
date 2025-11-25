@@ -1,31 +1,31 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/follo/src",
+  "sourceRoot": "apps/cuben/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/follo/tsconfig.app.json"
+    "tsConfigPath": "apps/cuben/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/follo",
+  "root": "apps/cuben",
   "projects": {
-    "follo": {
+    "cuben": {
       "type": "application",
-      "root": "apps/follo",
+      "root": "apps/cuben",
       "entryFile": "main",
-      "sourceRoot": "apps/follo/src",
+      "sourceRoot": "apps/cuben/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/follo/tsconfig.app.json"
+        "tsConfigPath": "apps/cuben/tsconfig.app.json"
       }
     },
-    "follo-batch": {
+    "cuben-batch": {
       "type": "application",
-      "root": "apps/follo-batch",
+      "root": "apps/cuebn-batch",
       "entryFile": "main",
-      "sourceRoot": "apps/follo-batch/src",
+      "sourceRoot": "apps/cuben-batch/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/follo-batch/tsconfig.app.json"
+        "tsConfigPath": "apps/cuebn-batch/tsconfig.app.json"
       }
     }
   }

@@ -26,7 +26,7 @@ export class ProductInput {
   productTitle: string;
 
   @IsNotEmpty()
-  @Field(() => Boolean)
+  @Field(() => Boolean, {nullable: true})
   isNegotiable: boolean;
 
   @IsNotEmpty()

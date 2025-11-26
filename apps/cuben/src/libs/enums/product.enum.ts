@@ -24,6 +24,17 @@ registerEnumType(ProductStatus, {
 	name: 'ProductStatus',
 });
 
+export enum ProductCondition {
+    NEW = "NEW",
+    LIKE_NEW = "LIKE_NEW",
+    GOOD = "GOOD",
+    USED = "USED",
+    BAD = "BAD",
+}
+registerEnumType(ProductCondition, {
+	name: 'ProductCondition',
+});
+
 export enum ProductLocation {
 	DORMITORY = 'DORMITORY', 
 	MAIN_GATE = 'MAIN_GATE', 

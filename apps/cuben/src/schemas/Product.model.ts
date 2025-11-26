@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { ProductLocation, ProductStatus, ProductType } from '../libs/enums/product.enum';
+import { ProductCondition, ProductLocation, ProductStatus, ProductType } from '../libs/enums/product.enum';
 
 const ProductSchema = new Schema(
 	{
@@ -23,7 +23,6 @@ const ProductSchema = new Schema(
 
 		productAddress: {
 			type: String,
-			required: true,
 		},
 
 		productTitle: {
@@ -36,19 +35,9 @@ const ProductSchema = new Schema(
 			required: true,
 		},
 
-		productSquare: {
-			type: Number,
-			required: true,
-		},
-
-		productBeds: {
-			type: Number,
-			required: true,
-		},
-
-		productRooms: {
-			type: Number,
-			required: true,
+		isNegotiable: {
+			type: Boolean,
+			default: false,
 		},
 
 		productViews: {
@@ -71,6 +60,12 @@ const ProductSchema = new Schema(
 			default: 0,
 		},
 
+		productCondition: {
+			type: String,
+			enum: ProductCondition,
+			default: ProductCondition.USED,
+		},
+
 		productImages: {
 			type: [String],
 			required: true,
@@ -80,12 +75,12 @@ const ProductSchema = new Schema(
 			type: String,
 		},
 
-		productBarter: {
-			type: Boolean,
-			default: false,
+		reportCount: {
+			type: Number,
+			default: 0,
 		},
 
-		productRent: {
+		isSold: {
 			type: Boolean,
 			default: false,
 		},

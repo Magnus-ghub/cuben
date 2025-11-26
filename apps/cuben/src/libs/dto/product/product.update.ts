@@ -36,22 +36,6 @@ productTitle?: string;
 productPrice?: number;
 
 @IsOptional()
-@Field(()=>Number, {nullable: true})
-productSquare?: number;
-
-@IsOptional()
-@IsInt()
-@Min(1)
-@Field(()=>Int, {nullable: true})
-productBeds?: number;
-
-@IsOptional()
-@IsInt()
-@Min(1)
-@Field(()=>Int, {nullable: true})
-productRooms?: number;
-
-@IsOptional()
 @Field(()=> [String], {nullable: true})
 productImages?: string[];
 

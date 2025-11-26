@@ -17,7 +17,7 @@ export class ProductInput {
   productLocation: ProductLocation;
 
   @IsNotEmpty()
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   productAddress: string;
 
   @IsNotEmpty()
@@ -26,24 +26,12 @@ export class ProductInput {
   productTitle: string;
 
   @IsNotEmpty()
+  @Field(() => Boolean)
+  isNegotiable: boolean;
+
+  @IsNotEmpty()
   @Field(() => Number)
   productPrice: number;
-
-  @IsNotEmpty()
-  @Field(() => Number)
-  productSquare: number;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Field(() => Int)
-  @Min(1)
-  productBeds: number;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Field(() => Int)
-  @Min(1)
-  productRooms: number;
 
   @IsNotEmpty()
   @Field(() => [String])
@@ -54,30 +42,11 @@ export class ProductInput {
   @Field(() => String, {nullable: true})
   productDesc?: string;
 
-  @IsOptional()
-  @Field(() => Boolean, {nullable: true})
-  @Min(0)
-  productBarter?: boolean;
-
-  @IsOptional()
-  @Field(() => Boolean, {nullable: true})
-  @Min(0)
-  productRent?: boolean;
-
   memberId?: ObjectId;
 }
 
 @InputType()
 export class PriceRange {
-    @Field(()=>Int)
-    start: number;
-
-    @Field(()=>Int)
-    end: number;
-}
-
-@InputType()
-export class SquaresRange {
     @Field(()=>Int)
     start: number;
 
@@ -109,17 +78,13 @@ export class PISearch{
   typeList?: ProductType[];
 
   @IsOptional()
-  @Field(() => [Int], {nullable: true})
-  roomsList?: Number[];
-
-  @IsOptional()
-  @Field(() => [Int], {nullable: true})
-  bedsList?: Number[];
-
-  @IsOptional()
   @IsIn(availableOptions, {each: true})
   @Field(() => [String], {nullable: true})
   options?: string[];
+
+  @IsOptional()
+  @Field(() => String, { nullable: true })
+  condition?: string;
 
   @IsOptional()
   @Field(() => PriceRange, {nullable: true})
@@ -128,10 +93,6 @@ export class PISearch{
   @IsOptional()
   @Field(() => PeriodsRange, {nullable: true})
   periodsRange?: PeriodsRange;
-
-  @IsOptional()
-  @Field(() => SquaresRange, {nullable: true})
-  squaresRange?: SquaresRange;
 
   @IsOptional()
   @Field(() => String, {nullable: true})
@@ -192,6 +153,10 @@ export class AgentProductsInquiry{
   @Field(()=> Direction, {nullable: true})
   direction?: Direction;
 
+  @IsOptional()
+  @Field(() => ProductStatus, { nullable: true })
+  productStatus?: ProductStatus;
+
   @IsNotEmpty()
   @Field(() => APISearch) 
   search: APISearch;
@@ -228,6 +193,10 @@ export class AllProductsInquiry{
   @IsOptional()
   @Field(()=> Direction, {nullable: true})
   direction?: Direction;
+
+  @IsOptional()
+  @Field(() => [ProductLocation], { nullable: true })
+  productLocationList?: ProductLocation[];
 
   @IsNotEmpty()
   @Field(() => ALPISearch) 

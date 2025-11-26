@@ -18,23 +18,20 @@ export class Product {
     @Field(() => ProductLocation)
     productLocation: ProductLocation;
 
-    @Field(() => String)
+    @Field(() => String, { nullable: true })
     productAddress: string;
 
     @Field(() => String)
     productTitle: string;
 
+    @Field(() => String, { nullable: true })
+    productDesc?: string;
+
     @Field(() => Number)
     productPrice: number;
 
-    @Field(() => Number)
-    productSquare: number;
-
-    @Field(() => Int)
-    productBeds: number;
-
-    @Field(() => Int)
-    productRooms: number;
+    @Field(() => Boolean)
+    isNegotiable: boolean;
 
     @Field(() => Int)
     productViews: number;
@@ -51,17 +48,17 @@ export class Product {
     @Field(() => [String])
     productImages: string[];
 
-    @Field(() => String, { nullable: true })
-    productDesc?: string;
-
-    @Field(() => Boolean)
-    productBarter: boolean;
-
-    @Field(() => Boolean)
-    productRent: boolean;
+    @Field(() => String)
+    productCondition: string; 
 
     @Field(() => String)
     memberId: ObjectId;
+
+    @Field(() => Int)
+    reportCount: number;
+
+    @Field(() => Boolean)
+    isSold: boolean;
 
     @Field(() => Date, { nullable: true })
     soldAt?: Date;

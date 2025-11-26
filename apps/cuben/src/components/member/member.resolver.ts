@@ -32,7 +32,7 @@ export class MemberResolver {
 		return await this.memberService.login(input);
 	}
 
-    @UseGuards(WithoutGuard)
+	@UseGuards(WithoutGuard)
 	@Query(() => Member)
 	public async getMember(@Args('memberId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Member> {
 		console.log('Query: getMember');
@@ -40,7 +40,7 @@ export class MemberResolver {
 		return this.memberService.getMember(memberId, targetId);
 	}
 
-    @UseGuards(AuthGuard)
+	@UseGuards(AuthGuard)
 	@Mutation(() => Member)
 	public async updateMember(
 		@Args('input') input: MemberUpdate,
@@ -51,7 +51,7 @@ export class MemberResolver {
 		return await this.memberService.updateMember(memberId, input);
 	}
 
-    @UseGuards(AuthGuard)
+	@UseGuards(AuthGuard)
 	@Query(() => String)
 	public async checkAuth(@AuthMember('memberNick') memberNick: string): Promise<string> {
 		console.log('Query: checkAuth');
@@ -60,24 +60,24 @@ export class MemberResolver {
 		return `Hi ${memberNick}`;
 	}
 
-    @UseGuards(WithoutGuard)
+	@UseGuards(WithoutGuard)
 	@Query(() => Members)
 	public async getAgents(@Args('input') input: AgentsInquiry, @AuthMember('_id') memberId: ObjectId): Promise<Members> {
 		console.log('Query: getAgents');
 		return await this.memberService.getAgents(memberId, input);
 	}
 
-    // TODO: likeTargetMember
+	// TODO: likeTargetMember
 
-    /** ADMIN **/
-    @Roles(MemberType.ADMIN)
+	/** ADMIN **/
+	@Roles(MemberType.ADMIN)
 	@UseGuards(RolesGuard)
 	@Query(() => Members)
 	public async getAllMembersByAdmin(@Args('input') input: MembersInquiry): Promise<Members> {
 		return await this.memberService.getAllMembersByAdmin(input);
 	}
 
-    @Roles(MemberType.ADMIN)
+	@Roles(MemberType.ADMIN)
 	@UseGuards(RolesGuard)
 	@Mutation(() => Member)
 	public async updateMemberByAdmin(@Args('input') input: MemberUpdate): Promise<Member> {
@@ -85,7 +85,7 @@ export class MemberResolver {
 		return await this.memberService.updateMemberByAdmin(input);
 	}
 
-    @Roles(MemberType.USER, MemberType.AGENT)
+	@Roles(MemberType.USER, MemberType.AGENT)
 	@UseGuards(RolesGuard)
 	@Query(() => String)
 	public async checkAuthRoles(@AuthMember() authMember: Member): Promise<string> {
@@ -94,9 +94,8 @@ export class MemberResolver {
 		return `Hi ${authMember.memberNick}, you are ${authMember.memberType} (memberId: ${authMember._id})`;
 	}
 
-
-    // IMAGE UPLOADER (member.resolver.ts)
-    @UseGuards(AuthGuard)
+	// IMAGE UPLOADER (member.resolver.ts)
+	@UseGuards(AuthGuard)
 	@Mutation((returns) => String)
 	public async imageUploader(
 		@Args({ name: 'file', type: () => GraphQLUpload })
@@ -122,5 +121,44 @@ export class MemberResolver {
 		if (!result) throw new Error(Message.UPLOAD_FAILED);
 
 		return url;
+	}
+
+	@UseGuards(AuthGuard)
+	@Mutation((returns) => [String])
+	public async imagesUploader(
+		@Args('files', { type: () => [GraphQLUpload] })
+		files: Promise<FileUpload>[],
+		@Args('target') target: String,
+	): Promise<string[]> {
+		console.log('Mutation: imagesUploader');
+
+		const uploadedImages = [];
+		const promisedList = files.map(async (img: Promise<FileUpload>, index: number): Promise<Promise<void>> => {
+			try {
+				const { filename, mimetype, encoding, createReadStream } = await img;
+
+				const validMime = validMimeTypes.includes(mimetype);
+				if (!validMime) throw new Error(Message.PROVIDE_ALLOWED_FORMAT);
+
+				const imageName = getSerialForImage(filename);
+				const url = `uploads/${target}/${imageName}`;
+				const stream = createReadStream();
+
+				const result = await new Promise((resolve, reject) => {
+					stream
+						.pipe(createWriteStream(url))
+						.on('finish', () => resolve(true))
+						.on('error', () => reject(false));
+				});
+				if (!result) throw new Error(Message.UPLOAD_FAILED);
+
+				uploadedImages[index] = url;
+			} catch (err) {
+				console.log('Error, file missing!');
+			}
+		});
+
+		await Promise.all(promisedList);
+		return uploadedImages;
 	}
 }

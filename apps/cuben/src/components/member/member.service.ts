@@ -10,6 +10,7 @@ import { StatisticModifier, T } from '../../libs/types/common';
 import { MemberUpdate } from '../../libs/dto/member/member.update';
 import { ViewService } from '../view/view.service';
 import { ViewGroup } from '../../libs/enums/view.enum';
+import { LikeService } from '../like/like.service';
 
 @Injectable()
 export class MemberService {
@@ -17,6 +18,7 @@ export class MemberService {
         @InjectModel('Member') private readonly memberModel: Model<Member>,
         private authService: AuthService,
         private viewService: ViewService,
+        private likeService: LikeService,
     ) {}
 
     public async signup(input: MemberInput): Promise<Member> {

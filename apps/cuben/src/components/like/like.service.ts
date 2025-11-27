@@ -1,8 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
+import { Like, MeLiked } from '../../libs/dto/like/like';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
+import { LikeInput } from '../../libs/dto/like/like.input';
+import { T } from '../../libs/types/common';
+import { Message } from '../../libs/enums/common.enum';
+import { LikeGroup } from '../../libs/enums/like.enum';
+import { lookupFavorite } from '../../libs/config';
+import { OrdinaryInquiry } from '../../libs/dto/product/product.input';
+import { Products } from '../../libs/dto/product/product';
 
 @Injectable()
 export class LikeService {
-    constructor(@InjectModel('Like') private readonly likeModel: Model<null>) {}
+    constructor(@InjectModel('Like') private readonly likeModel: Model<Like>) {}
+
+    public async toggleLike(input: LikeInput): Promise<number> {
+        const search: T = { memberId: input.memberId, likeRefId: input.likeRefId },
+          exist = await this.likeModel.findOne(search).exec();
+        let modifier = 1;
+        
+        if (exist) {
+            await this.likeModel.findOneAndDelete(search).exec();
+            modifier = -1;
+        } else {
+            try {
+                await this.likeModel.create(input);
+            } catch (err) {
+                console.log('Error, Service.model:', err.message);
+                throw new BadGatewayException(Message.CREATE_FAILED);
+            }
+        }
+        console.log(`-Like modifier ${modifier} -`);
+        return modifier;
+    }
+
+    public async checkLikeExistence(input: LikeInput): Promise<MeLiked[]> {
+        const { memberId, likeRefId } = input;
+        const result = await this.likeModel.findOne({ memberId: memberId, likeRefId: likeRefId }).exec();
+        return result ? [{ memberId: memberId, likeRefId: likeRefId, myFavorite: true }] : [];
+    }
 }

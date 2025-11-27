@@ -11,6 +11,7 @@ import { MemberType } from '../../libs/enums/member.enum';
 import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
 import { ProductUpdate } from '../../libs/dto/product/product.update';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Resolver()
 export class ProductResolver {
@@ -60,4 +61,15 @@ export class ProductResolver {
         console.log('Query: getProducts');
         return await this.productService.getProducts(memberId, input);
     }
+
+    @UseGuards(AuthGuard)
+	@Mutation(() => Product)
+	public async likeTargetProduct(
+		@Args('productId') input: string,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Product> {
+		console.log('Mutation: likeTargetProduct');
+		const likeRefId = shapeIntoMongoObjectId(input);
+		return await this.productService.likeTargetProduct(memberId, likeRefId);
+	}
 }

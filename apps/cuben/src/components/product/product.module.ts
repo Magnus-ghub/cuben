@@ -6,6 +6,7 @@ import ProductSchema from '../../schemas/Product.model';
 import { AuthModule } from '../auth/auth.module';
 import { ViewModule } from '../view/view.module';
 import { MemberModule } from '../member/member.module';
+import { LikeModule } from '../like/like.module';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { MemberModule } from '../member/member.module';
     AuthModule,
     ViewModule,
     MemberModule,
-    //Like module
+    LikeModule,
   ],
   providers: [ProductResolver, ProductService],
   exports: [ProductService],

@@ -26,19 +26,19 @@ export class ProductService {
 	) {}
 
 	public async createProduct(input: ProductInput): Promise<Product> {
-		try {
-			const result = await this.productModel.create(input);
-			await this.memberService.memberStatsEditor({
-				_id: result.memberId,
-				targetKey: 'memberProducts',
-				modifier: 1,
-			});
-			return result;
-		} catch (err) {
-			console.log('Error, Service.model:', err.message);
-			throw new BadRequestException(Message.CREATE_FAILED);
-		}
-	}
+        try {
+            const result = await this.productModel.create(input);
+            await this.memberService.memberStatsEditor({
+                _id: result.memberId,
+                targetKey: 'memberProducts',
+                modifier: 1,
+            });
+            return result;
+        } catch (err) {
+            console.log('Error, Service.model:', err.message);
+            throw new BadRequestException(Message.CREATE_FAILED);
+        }
+    }
 
 	public async getProduct(memberId: ObjectId, productId: ObjectId): Promise<Product> {
 		const search: T = {
@@ -58,11 +58,11 @@ export class ProductService {
 			}
 
 			const likeInput = { memberId: memberId, likeRefId: productId, likeGroup: LikeGroup.PRODUCT };
-            targetProduct.meLiked = await this.likeService.checkLikeExistence(likeInput);
+			targetProduct.meLiked = await this.likeService.checkLikeExistence(likeInput);
 		}
 
 		targetProduct.memberData = await this.memberService.getMember(null, targetProduct.memberId);
-        return targetProduct;
+		return targetProduct;
 	}
 
 	public async updateProduct(memberId: ObjectId, input: ProductUpdate): Promise<Product> {
@@ -121,14 +121,7 @@ export class ProductService {
 	}
 
 	private shapeMatchQuery(match: T, input: ProductsInquiry): void {
-		const {
-			memberId,
-			locationList,
-			typeList,
-			periodsRange,
-			pricesRange,
-			text,
-		} = input.search;
+		const { memberId, locationList, typeList, periodsRange, pricesRange, text } = input.search;
 		if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
 		if (locationList && locationList.length) match.productLocation = { $in: locationList };
 		if (typeList && typeList.length) match.productType = { $in: typeList };
@@ -138,23 +131,25 @@ export class ProductService {
 		if (text) match.productTitle = { $regex: new RegExp(text, 'i') };
 	}
 
-    public async likeTargetProduct(memberId: ObjectId, likeRefId: ObjectId): Promise<Product> {
-        const target: Product = await this.productModel.findOne({_id: likeRefId, productStatus: ProductStatus.ACTIVE}).exec();
-        if(!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-    
-        const input: LikeInput = {
-            memberId: memberId,
-            likeRefId: likeRefId,
-            likeGroup: LikeGroup.PRODUCT,
-        };
-    
-        // LIKE TOGGLE via Like Module
-        const modifier: number = await this.likeService.toggleLike(input);
-        const result = await this.productStatsEditor({_id: likeRefId, targetKey: 'productLikes', modifier: modifier});
-    
-        if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-        return result;
-    }
+	public async likeTargetProduct(memberId: ObjectId, likeRefId: ObjectId): Promise<Product> {
+		const target: Product = await this.productModel
+			.findOne({ _id: likeRefId, productStatus: ProductStatus.ACTIVE })
+			.exec();
+		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
+		const input: LikeInput = {
+			memberId: memberId,
+			likeRefId: likeRefId,
+			likeGroup: LikeGroup.PRODUCT,
+		};
+
+		// LIKE TOGGLE via Like Module
+		const modifier: number = await this.likeService.toggleLike(input);
+		const result = await this.productStatsEditor({ _id: likeRefId, targetKey: 'productLikes', modifier: modifier });
+
+		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+		return result;
+	}
 
 	public async productStatsEditor(input: StatisticModifier): Promise<Product> {
 		const { _id, targetKey, modifier } = input;

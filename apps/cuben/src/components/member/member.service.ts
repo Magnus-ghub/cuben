@@ -13,6 +13,7 @@ import { ViewGroup } from '../../libs/enums/view.enum';
 import { LikeService } from '../like/like.service';
 import { LikeInput } from '../../libs/dto/like/like.input';
 import { LikeGroup } from '../../libs/enums/like.enum';
+import { lookupAuthMemberLiked } from '../../libs/config';
 
 @Injectable()
 export class MemberService {
@@ -70,7 +71,9 @@ export class MemberService {
 				targetMember.memberViews++;
 			}
 
-			//TODO: meLiked
+			const likeInput = { memberId: memberId, likeRefId: targetId, likeGroup: LikeGroup.MEMBER };
+            targetMember.meLiked = await this.likeService.checkLikeExistence(likeInput);
+
 			// TODO: meFollowed
 		}
 
@@ -111,7 +114,7 @@ export class MemberService {
 						list: [
 							{ $skip: (input.page - 1) * input.limit },
 							{ $limit: input.limit },
-							//TODO: lookupAuthMemberLiked(memberId),
+							lookupAuthMemberLiked(memberId),
 						],
 						metaCounter: [{ $count: 'total' }],
 					},

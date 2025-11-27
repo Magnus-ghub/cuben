@@ -45,7 +45,6 @@ export class ProductService {
 
 		const targetProduct: Product = await this.productModel.findOne(search).lean().exec();
 		if (!targetProduct) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-		console.log("'targetProduct:", targetProduct);
 
 		if (memberId) {
 			const viewInput = { memberId: memberId, viewRefId: productId, viewGroup: ViewGroup.PRODUCT };

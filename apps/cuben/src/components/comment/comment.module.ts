@@ -21,7 +21,6 @@ import { BoardArticleModule } from '../board-article/board-article.module';
     ProductModule,
     BoardArticleModule,
   ],
-  providers: [CommentResolver, CommentService],
-  exports: [CommentService],
+  providers: [CommentResolver, CommentService]
 })
 export class CommentModule {}

@@ -40,7 +40,7 @@ export class ProductResolver {
 		return await this.productService.getProduct(memberId, productId);
 	}
 
-    @Roles(MemberType.USER) 
+    @Roles(MemberType.USER, MemberType.ADMIN) 
     @UseGuards(RolesGuard)
     @Mutation((returns) => Product)
     public async updateProduct(

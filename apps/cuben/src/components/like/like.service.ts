@@ -5,10 +5,6 @@ import { Model, ObjectId } from 'mongoose';
 import { LikeInput } from '../../libs/dto/like/like.input';
 import { T } from '../../libs/types/common';
 import { Message } from '../../libs/enums/common.enum';
-import { LikeGroup } from '../../libs/enums/like.enum';
-import { lookupFavorite } from '../../libs/config';
-import { OrdinaryInquiry } from '../../libs/dto/product/product.input';
-import { Products } from '../../libs/dto/product/product';
 
 @Injectable()
 export class LikeService {

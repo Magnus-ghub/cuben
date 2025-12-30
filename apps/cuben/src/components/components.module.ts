@@ -8,17 +8,20 @@ import { CommentModule } from './comment/comment.module';
 import { BoardArticleModule } from './board-article/board-article.module';
 import { AuthModule } from './auth/auth.module';
 import { SaveModule } from './save/save.module';
+import { PostModule } from './post/post.module';
 
 @Module({
   imports: [
     MemberModule, 
     ProductModule, 
+    PostModule,
     LikeModule, 
     FollowModule, 
     ViewModule, 
     CommentModule, 
     BoardArticleModule, 
-    AuthModule, SaveModule
+    AuthModule, 
+    SaveModule
   ]
 })
 export class ComponentsModule {}

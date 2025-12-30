@@ -42,6 +42,9 @@ export class Member {
 	memberProducts?: number;
 
 	@Field(() => Int)
+	memberPosts?: number;
+
+	@Field(() => Int)
 	memberArticles: number;
 
 	@Field(() => Int)

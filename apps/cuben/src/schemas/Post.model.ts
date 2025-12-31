@@ -29,6 +29,11 @@ const PostSchema = new Schema(
 			default: 0,
 		},
 
+		postSaves: {
+			type: Number,
+			default: 0,
+		},
+
 		postComments: {
 			type: Number,
 			default: 0,
@@ -39,6 +44,9 @@ const PostSchema = new Schema(
 			required: true,
 			ref: 'Member',
 		},
+
+		blockedAt: { type: Date },
+		deletedAt: { type: Date },
 	},
 	{ timestamps: true, collection: 'posts' },
 );

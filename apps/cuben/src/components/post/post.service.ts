@@ -76,7 +76,7 @@ export class PostService {
         if (blockedAt || deletedAt) {
             await this.memberService.memberStatsEditor({
                 _id: memberId,
-                targetKey: 'memberProducts',
+                targetKey: 'memberPosts',
                 modifier: -1,
             });
         }
@@ -155,7 +155,7 @@ export class PostService {
 
         // LIKE TOGGLE via Like Module
         const modifier: number = await this.saveService.toggleSave(input);
-        const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postLikes', modifier: modifier });
+        const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier: modifier });
 
         if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
         return result;

@@ -54,7 +54,7 @@ export class PostResolver {
 
     @UseGuards(WithoutGuard)
     @Query((returns) => Posts)
-    public async getProducts(
+    public async getPosts(
         @Args('input') input: PostsInquiry,
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<Posts> {

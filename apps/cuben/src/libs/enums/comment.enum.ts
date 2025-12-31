@@ -11,6 +11,7 @@ registerEnumType(CommentStatus, {
 export enum CommentGroup {
 	MEMBER = 'MEMBER',
 	ARTICLE = 'ARTICLE',
+	POST = 'POST',
 	PRODUCT = 'PRODUCT',
 }
 registerEnumType(CommentGroup, {

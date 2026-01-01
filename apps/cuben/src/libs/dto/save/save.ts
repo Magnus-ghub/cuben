@@ -3,7 +3,7 @@ import { ObjectId } from 'mongoose';
 import { SaveGroup } from '../../enums/save.enum';
 
 @ObjectType()
-export class Mesaved {
+export class MeSaved {
 	@Field(() => String)
 	memberId: ObjectId;
 
@@ -11,7 +11,7 @@ export class Mesaved {
 	saveRefId: ObjectId;
 
 	@Field(() => Boolean)
-	mySaved: boolean;
+	mySaves: boolean;
 }
 
 @ObjectType()

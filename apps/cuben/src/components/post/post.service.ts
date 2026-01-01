@@ -19,158 +19,187 @@ import { SaveGroup } from '../../libs/enums/save.enum';
 
 @Injectable()
 export class PostService {
-    constructor(
-        @InjectModel('Post') private readonly postModel: Model<Post>,
-        private memberService: MemberService,
-        private likeService: LikeService,
-        private saveService: SaveService,
-    ) {}
+	constructor(
+		@InjectModel('Post') private readonly postModel: Model<Post>,
+		private memberService: MemberService,
+		private likeService: LikeService,
+		private saveService: SaveService,
+	) {}
 
-    public async createPost(input: PostInput): Promise<Post> {
-        try {
-            const result = await this.postModel.create(input);
-            await this.memberService.memberStatsEditor({
-                _id: result.memberId,
-                targetKey: 'memberPosts',
-                modifier: 1,
-            });
-            return result;
-        } catch (err) {
-            console.log('Error, Service.model:', err.message);
-            throw new BadRequestException(Message.CREATE_FAILED);
-        }
-    }
+	public async createPost(input: PostInput): Promise<Post> {
+		try {
+			const result = await this.postModel.create(input);
+			await this.memberService.memberStatsEditor({
+				_id: result.memberId,
+				targetKey: 'memberPosts',
+				modifier: 1,
+			});
+			return result;
+		} catch (err) {
+			console.log('Error, Service.model:', err.message);
+			throw new BadRequestException(Message.CREATE_FAILED);
+		}
+	}
 
-    public async getPost(memberId: ObjectId, postId: ObjectId): Promise<Post> {
-        const search: T = {
-            _id: postId,
-            postStatus: PostStatus.ACTIVE,
-        };
+	public async getPost(memberId: ObjectId, postId: ObjectId): Promise<Post> {
+		const search: T = {
+			_id: postId,
+			postStatus: PostStatus.ACTIVE,
+		};
 
-        const targetPost: Post = await this.postModel.findOne(search).lean().exec();
-        if (!targetPost) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+		const targetPost: Post = await this.postModel.findOne(search).lean().exec();
+		if (!targetPost) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-        if (memberId) {
-            const likeInput = { memberId: memberId, likeRefId: postId, likeGroup: LikeGroup.POST };
-            targetPost.meLiked = await this.likeService.checkLikeExistence(likeInput);
-        }
+		if (memberId) {
+			const likeInput = { memberId: memberId, likeRefId: postId, likeGroup: LikeGroup.POST };
+			targetPost.meLiked = await this.likeService.checkLikeExistence(likeInput);
 
-        targetPost.memberData = await this.memberService.getMember(null, targetPost.memberId);
-        return targetPost;
-    }
+            const saveInput = { memberId: memberId, saveRefId: postId, saveGroup: SaveGroup.POST };
+            targetPost.meSaved = await this.saveService.checkSaveExistence(saveInput);  
+		}
 
-    public async updatePost(memberId: ObjectId, input: PostUpdate): Promise<Post> {
-        let { postStatus, blockedAt, deletedAt } = input;
-        const search: T = {
-            _id: input._id,
-            memberId: memberId,
-            postStatus: PostStatus.ACTIVE,
-        };
+		targetPost.memberData = await this.memberService.getMember(null, targetPost.memberId);
+		return targetPost;
+	}
 
-        if (postStatus === PostStatus.BLOCKED) blockedAt = moment().toDate();
-        else if (postStatus === PostStatus.DELETE) deletedAt = moment().toDate();
+	public async updatePost(memberId: ObjectId, input: PostUpdate): Promise<Post> {
+		let { postStatus, blockedAt, deletedAt } = input;
+		const search: T = {
+			_id: input._id,
+			memberId: memberId,
+			postStatus: PostStatus.ACTIVE,
+		};
 
-        const result = await this.postModel.findOneAndUpdate(search, input, { new: true }).exec();
-        if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+		if (postStatus === PostStatus.BLOCKED) blockedAt = moment().toDate();
+		else if (postStatus === PostStatus.DELETE) deletedAt = moment().toDate();
 
-        if (blockedAt || deletedAt) {
-            await this.memberService.memberStatsEditor({
-                _id: memberId,
-                targetKey: 'memberPosts',
-                modifier: -1,
-            });
-        }
+		const result = await this.postModel.findOneAndUpdate(search, input, { new: true }).exec();
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
 
-        return result;
-    }
+		if (blockedAt || deletedAt) {
+			await this.memberService.memberStatsEditor({
+				_id: memberId,
+				targetKey: 'memberPosts',
+				modifier: -1,
+			});
+		}
 
-    public async getPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
-        const match: T = { postStatus: PostStatus.ACTIVE };
-        const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
+		return result;
+	}
 
-        this.shapeMatchQuery(match, input);
-        console.log('match:', match);
+	public async getPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
+	const match: T = { postStatus: PostStatus.ACTIVE };
+	const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
-        const result = await this.postModel
-            .aggregate([
-                { $match: match },
-                { $sort: sort },
-                {
-                    $facet: {
-                        list: [
-                            { $skip: (input.page - 1) * input.limit },
-                            { $limit: input.limit },
-                            lookupAuthMemberLiked(memberId),
-                            lookupMember,
-                            { $unwind: '$memberData' },
-                        ],
-                        metaCounter: [{ $count: 'total' }],
-                    },
-                },
-            ])
-            .exec();
-        if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+	this.shapeMatchQuery(match, input);
+	console.log('match:', match);
 
-        return result[0];
-    }
+	const result = await this.postModel
+		.aggregate([
+			{ $match: match },
+			{ $sort: sort },
+			{
+				$facet: {
+					list: [
+						{ $skip: (input.page - 1) * input.limit },
+						{ $limit: input.limit },
+						lookupAuthMemberLiked(memberId), // Like bor – to'g'ri
+						{
+							$lookup: {
+								from: 'Save',
+								let: { 
+									userId: memberId,  // ✅ Authenticated user ID (joriy user)
+									postId: '$_id'     // Post ID
+								},
+								pipeline: [
+									{
+										$match: {
+											$expr: {
+												$and: [
+													{ $eq: ['$memberId', '$$userId'] },  // Joriy user'ning saves
+													{ $eq: ['$saveRefId', '$$postId'] }, // Ushbu post
+													{ $eq: ['$saveGroup', SaveGroup.POST] },
+												],
+											},
+										},
+									},
+									{ 
+										$project: { 
+											memberId: 1, 
+											saveRefId: 1, 
+											mySaves: { $const: true }  // Agar topilsa, true (frontend length > 0 bilan tekshiradi)
+										} 
+									},
+								],
+								as: 'meSaved',
+							},
+						},
+						lookupMember,
+						{ $unwind: '$memberData' },
+					],
+					metaCounter: [{ $count: 'total' }],
+				},
+			},
+		])
+		.exec();
+	if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-    private shapeMatchQuery(match: T, input: PostsInquiry): void {
-        const { memberId,  text } = input.search;
-        if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
+	return result[0];
+}
 
-        if (text) match.postTitle = { $regex: new RegExp(text, 'i') };
-    }
+	private shapeMatchQuery(match: T, input: PostsInquiry): void {
+		const { memberId, text } = input.search;
+		if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
 
-    public async likeTargetPost(memberId: ObjectId, likeRefId: ObjectId): Promise<Post> {
-        const target: Post = await this.postModel
-            .findOne({ _id: likeRefId, postStatus: PostStatus.ACTIVE })
-            .exec();
-        if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+		if (text) match.postTitle = { $regex: new RegExp(text, 'i') };
+	}
 
-        const input: LikeInput = {
-            memberId: memberId,
-            likeRefId: likeRefId,
-            likeGroup: LikeGroup.POST,
-        };
+	public async likeTargetPost(memberId: ObjectId, likeRefId: ObjectId): Promise<Post> {
+		const target: Post = await this.postModel.findOne({ _id: likeRefId, postStatus: PostStatus.ACTIVE }).exec();
+		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-        // LIKE TOGGLE via Like Module
-        const modifier: number = await this.likeService.toggleLike(input);
-        const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier: modifier });
+		const input: LikeInput = {
+			memberId: memberId,
+			likeRefId: likeRefId,
+			likeGroup: LikeGroup.POST,
+		};
 
-        if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-        return result;
-    }
+		// LIKE TOGGLE via Like Module
+		const modifier: number = await this.likeService.toggleLike(input);
+		const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier: modifier });
 
-    public async saveTargetPost(memberId: ObjectId, saveRefId: ObjectId): Promise<Post> {
-        const target: Post = await this.postModel
-            .findOne({ _id: saveRefId, postStatus: PostStatus.ACTIVE })
-            .exec();
-        if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+		return result;
+	}
 
-        const input: SaveInput = {
-            memberId: memberId,
-            saveRefId: saveRefId,
-            saveGroup: SaveGroup.POST,
-        };
+	public async saveTargetPost(memberId: ObjectId, saveRefId: ObjectId): Promise<Post> {
+		const target: Post = await this.postModel.findOne({ _id: saveRefId, postStatus: PostStatus.ACTIVE }).exec();
+		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-        // LIKE TOGGLE via Like Module
-        const modifier: number = await this.saveService.toggleSave(input);
-        const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier: modifier });
+		const input: SaveInput = {
+			memberId: memberId,
+			saveRefId: saveRefId,
+			saveGroup: SaveGroup.POST,
+		};
 
-        if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-        return result;
-    }
+		// LIKE TOGGLE via Like Module
+		const modifier: number = await this.saveService.toggleSave(input);
+		const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier: modifier });
 
-    public async postStatsEditor(input: StatisticModifier): Promise<Post> {
-        const { _id, targetKey, modifier } = input;
-        return await this.postModel
-            .findByIdAndUpdate(
-                _id,
-                { $inc: { [targetKey]: modifier } },
-                {
-                    new: true,
-                },
-            )
-            .exec();
-    }
+		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+		return result;
+	}
+
+	public async postStatsEditor(input: StatisticModifier): Promise<Post> {
+		const { _id, targetKey, modifier } = input;
+		return await this.postModel
+			.findByIdAndUpdate(
+				_id,
+				{ $inc: { [targetKey]: modifier } },
+				{
+					new: true,
+				},
+			)
+			.exec();
+	}
 }

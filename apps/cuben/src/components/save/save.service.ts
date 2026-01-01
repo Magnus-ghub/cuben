@@ -1,12 +1,11 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
-import { Like, MeLiked } from '../../libs/dto/like/like';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId } from 'mongoose';
-import { LikeInput } from '../../libs/dto/like/like.input';
+import { Model } from 'mongoose';
 import { T } from '../../libs/types/common';
 import { Message } from '../../libs/enums/common.enum';
-import { Mesaved, Save } from '../../libs/dto/save/save';
+import { MeSaved, Save } from '../../libs/dto/save/save';
 import { SaveInput } from '../../libs/dto/save/save.input';
+
 
 @Injectable()
 export class SaveService {
@@ -32,9 +31,9 @@ export class SaveService {
         return modifier;
     }
 
-    public async checkSaveExistence(input: SaveInput): Promise<Mesaved[]> {
+    public async checkSaveExistence(input: SaveInput): Promise<MeSaved[]> {
         const { memberId, saveRefId } = input;
         const result = await this.saveModel.findOne({ memberId: memberId, saveRefId: saveRefId }).exec();
-        return result ? [{ memberId: memberId, saveRefId: saveRefId, mySaved: true }] : [];
+        return result ? [{ memberId: memberId, saveRefId: saveRefId, mySaves: true }] : [];
     }
 }

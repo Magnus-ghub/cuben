@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { MemberModule } from '../member/member.module';
 import { ProductModule } from '../product/product.module';
 import { BoardArticleModule } from '../board-article/board-article.module';
+import { PostModule } from '../post/post.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BoardArticleModule } from '../board-article/board-article.module';
       },
     ]),
     AuthModule,
+    PostModule,
     MemberModule,
     ProductModule,
     BoardArticleModule,

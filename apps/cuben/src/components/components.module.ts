@@ -7,7 +7,6 @@ import { ViewModule } from './view/view.module';
 import { CommentModule } from './comment/comment.module';
 import { BoardArticleModule } from './board-article/board-article.module';
 import { AuthModule } from './auth/auth.module';
-import { SaveModule } from './save/save.module';
 import { PostModule } from './post/post.module';
 
 @Module({
@@ -21,7 +20,6 @@ import { PostModule } from './post/post.module';
     CommentModule, 
     BoardArticleModule, 
     AuthModule, 
-    SaveModule
   ]
 })
 export class ComponentsModule {}

@@ -5,6 +5,7 @@ export enum LikeGroup {
 	PRODUCT = 'PRODUCT',
 	POST = 'POST',
 	ARTICLE = 'ARTICLE',
+	SAVE_POST = 'SAVE_POST'
 }
 registerEnumType(LikeGroup, {
 	name: 'LikeGroup',

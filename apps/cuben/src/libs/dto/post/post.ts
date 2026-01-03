@@ -4,17 +4,6 @@ import { Member, TotalCounter } from '../member/member';
 import { MeLiked } from '../like/like';
 import { PostStatus } from '../../enums/post.enum';
 
-@ObjectType()
-export class MeSaved {
-	@Field(() => String)
-	memberId: ObjectId;
-
-	@Field(() => String)
-	saveRefId: ObjectId;
-
-	@Field(() => Boolean)
-	mySaves: boolean;
-}
 
 @ObjectType()
 export class Post {
@@ -52,8 +41,8 @@ export class Post {
 	updatedAt: Date;
 
 	/** from aggregation **/
-	@Field(() => [MeSaved], {nullable: true})
-	meSaved?: MeSaved[];
+	@Field(() => [MeLiked], {nullable: true})
+	meSaved?: MeLiked[];
 
 	@Field(() => [MeLiked], {nullable: true})
 	meLiked?: MeLiked[];

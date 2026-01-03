@@ -1,3 +1,4 @@
+// PostService (commentTargetPost da skipStatsUpdate qo'shing, double update oldini olish uchun)
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
@@ -9,13 +10,11 @@ import { lookupAuthMemberLiked, lookupMember, shapeIntoMongoObjectId } from '../
 import { LikeService } from '../like/like.service';
 import { LikeGroup } from '../../libs/enums/like.enum';
 import { LikeInput } from '../../libs/dto/like/like.input';
-import { SaveService } from '../save/save.service';
 import { Post, Posts } from '../../libs/dto/post/post';
 import { PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
 import { PostUpdate } from '../../libs/dto/post/post.update';
 import { PostStatus } from '../../libs/enums/post.enum';
-import { SaveInput } from '../../libs/dto/save/save.input';
-import { SaveGroup } from '../../libs/enums/save.enum';
+import { CommentService } from '../comment/comment.service';
 
 @Injectable()
 export class PostService {
@@ -23,7 +22,6 @@ export class PostService {
 		@InjectModel('Post') private readonly postModel: Model<Post>,
 		private memberService: MemberService,
 		private likeService: LikeService,
-		private saveService: SaveService,
 	) {}
 
 	public async createPost(input: PostInput): Promise<Post> {
@@ -54,8 +52,8 @@ export class PostService {
 			const likeInput = { memberId: memberId, likeRefId: postId, likeGroup: LikeGroup.POST };
 			targetPost.meLiked = await this.likeService.checkLikeExistence(likeInput);
 
-            const saveInput = { memberId: memberId, saveRefId: postId, saveGroup: SaveGroup.POST };
-            targetPost.meSaved = await this.saveService.checkSaveExistence(saveInput);  
+            const saveInput = { memberId: memberId, likeRefId: postId, likeGroup: LikeGroup.SAVE_POST };
+            targetPost.meSaved = await this.likeService.checkLikeExistence(saveInput);  
 		}
 
 		targetPost.memberData = await this.memberService.getMember(null, targetPost.memberId);
@@ -103,22 +101,22 @@ export class PostService {
 					list: [
 						{ $skip: (input.page - 1) * input.limit },
 						{ $limit: input.limit },
-						lookupAuthMemberLiked(memberId), // Like bor – to'g'ri
+						lookupAuthMemberLiked(memberId), 
 						{
 							$lookup: {
-								from: 'Save',
+								from: 'Like', 
 								let: { 
-									userId: memberId,  // ✅ Authenticated user ID (joriy user)
-									postId: '$_id'     // Post ID
+									userId: memberId, 
+									postId: '$_id'    
 								},
 								pipeline: [
 									{
 										$match: {
 											$expr: {
 												$and: [
-													{ $eq: ['$memberId', '$$userId'] },  // Joriy user'ning saves
-													{ $eq: ['$saveRefId', '$$postId'] }, // Ushbu post
-													{ $eq: ['$saveGroup', SaveGroup.POST] },
+													{ $eq: ['$memberId', '$$userId'] },  
+													{ $eq: ['$likeRefId', '$$postId'] }, 
+													{ $eq: ['$likeGroup', LikeGroup.SAVE_POST] },
 												],
 											},
 										},
@@ -126,8 +124,8 @@ export class PostService {
 									{ 
 										$project: { 
 											memberId: 1, 
-											saveRefId: 1, 
-											mySaves: { $const: true }  // Agar topilsa, true (frontend length > 0 bilan tekshiradi)
+											likeRefId: 1, 
+											mySaves: { $const: true }  
 										} 
 									},
 								],
@@ -164,7 +162,6 @@ export class PostService {
 			likeGroup: LikeGroup.POST,
 		};
 
-		// LIKE TOGGLE via Like Module
 		const modifier: number = await this.likeService.toggleLike(input);
 		const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier: modifier });
 
@@ -172,18 +169,18 @@ export class PostService {
 		return result;
 	}
 
+
 	public async saveTargetPost(memberId: ObjectId, saveRefId: ObjectId): Promise<Post> {
 		const target: Post = await this.postModel.findOne({ _id: saveRefId, postStatus: PostStatus.ACTIVE }).exec();
 		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		const input: SaveInput = {
+		const input: LikeInput = {
 			memberId: memberId,
-			saveRefId: saveRefId,
-			saveGroup: SaveGroup.POST,
+			likeRefId: saveRefId,
+			likeGroup: LikeGroup.SAVE_POST,
 		};
 
-		// LIKE TOGGLE via Like Module
-		const modifier: number = await this.saveService.toggleSave(input);
+		const modifier: number = await this.likeService.toggleLike(input);
 		const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier: modifier });
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);

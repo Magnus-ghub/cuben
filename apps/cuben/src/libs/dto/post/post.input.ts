@@ -7,12 +7,12 @@ import { availablePostSorts } from '../../config';
 @InputType()
 export class PostInput {
 	@IsNotEmpty()
-	@Length(3, 50)
+	@Length(3, 500)
 	@Field(() => String)
 	postTitle: string;
 
 	@IsNotEmpty()
-	@Length(3, 9999)
+	@Length(3, 99999)
 	@Field(() => String)
 	postContent: string;
 

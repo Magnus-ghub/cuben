@@ -43,7 +43,7 @@ export class ViewService {
                         as: 'visitedProduct',
                     },
                 },
-                { $unwind: '$visitedProperty' },
+                { $unwind: '$visitedProduct' },
                 {
                     $facet: {
                         list: [

@@ -50,20 +50,20 @@ export class LikeService {
                 { $sort: { updatedAt: -1 } },
                 {
                     $lookup: {
-                        from: 'properties',
+                        from: 'products',
                         localField: 'likeRefId',
                         foreignField: '_id',
-                        as: 'favoriteProperty',
+                        as: 'favoriteProduct',
                     },
                 },
-                { $unwind: '$favoriteProperty' },
+                { $unwind: '$favoriteProduct' },
                 {
                     $facet: {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
                             lookupFavorite,
-                            { $unwind: '$favoriteProperty.memberData' },
+                            { $unwind: '$favoriteProduct.memberData' },
                         ],
                         metaCounter: [{ $count: 'total' }],
                     },
@@ -71,8 +71,10 @@ export class LikeService {
             ])
             .exec();
 
+            console.log('Aggregate Data:', data);
+            
         const result: Products = {list: [], metaCounter: data[0].metaCounter };
-        result.list = data[0].list.map((ele) => ele.favoriteProperty);
+        result.list = data[0].list.map((ele) => ele.favoriteProduct);
 
         return result;    
     }

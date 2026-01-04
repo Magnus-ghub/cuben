@@ -1,7 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ProductService } from './product.service';
 import { Product, Products } from '../../libs/dto/product/product';
-import { ProductInput, ProductsInquiry } from '../../libs/dto/product/product.input';
+import { OrdinaryInquiry, ProductInput, ProductsInquiry } from '../../libs/dto/product/product.input';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { ObjectId } from 'mongoose';
 import { UseGuards } from '@nestjs/common';
@@ -61,6 +61,26 @@ export class ProductResolver {
         console.log('Query: getProducts');
         return await this.productService.getProducts(memberId, input);
     }
+
+	@UseGuards(AuthGuard)
+	@Query((returns) => Products)
+	public async getFavorites(
+		@Args('input') input: OrdinaryInquiry,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Products> {
+		console.log('Query: getFavorites');
+		return await this.productService.getFavorites(memberId, input);
+	}
+
+	@UseGuards(AuthGuard)
+	@Query((returns) => Products)
+	public async getVisited(
+		@Args('input') input: OrdinaryInquiry,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Products> {
+		console.log('Query: getVisited');
+		return await this.productService.getVisited(memberId, input);
+	}
 
     @UseGuards(AuthGuard)
 	@Mutation(() => Product)

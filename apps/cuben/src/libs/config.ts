@@ -8,7 +8,6 @@ export const availableProductSorts = [
 	'updatedAt',
 	'productLikes',
 	'productViews',
-	'productRank',
 	'productPrice',
 ];
 

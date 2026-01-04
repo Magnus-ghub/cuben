@@ -4,7 +4,7 @@ import { Model, ObjectId } from 'mongoose';
 import { Product, Products } from '../../libs/dto/product/product';
 import { MemberService } from '../member/member.service';
 import { ViewService } from '../view/view.service';
-import { ProductInput, ProductsInquiry } from '../../libs/dto/product/product.input';
+import { OrdinaryInquiry, ProductInput, ProductsInquiry } from '../../libs/dto/product/product.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import moment from 'moment';
 import { StatisticModifier, T } from '../../libs/types/common';
@@ -119,6 +119,14 @@ export class ProductService {
 
 		return result[0];
 	}
+
+	public async getFavorites(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+        return await this.likeService.getFavoriteProducts(memberId, input);
+    }
+
+    public async getVisited(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+        return await this.viewService.getVisitedProducts(memberId, input);
+    }
 
 	private shapeMatchQuery(match: T, input: ProductsInquiry): void {
 		const { memberId, locationList, typeList, periodsRange, pricesRange, text } = input.search;

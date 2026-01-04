@@ -41,12 +41,12 @@ export class Post {
 	updatedAt: Date;
 
 	/** from aggregation **/
-	@Field(() => [MeLiked], {nullable: true})
-	meSaved?: MeLiked[];
+	@Field(() => [MeLiked], { nullable: true })
+	meLiked?: MeLiked[]; 
 
-	@Field(() => [MeLiked], {nullable: true})
-	meLiked?: MeLiked[];
-
+	@Field(() => [MeLiked], { nullable: true })
+	meSaved?: MeLiked[]; 
+	
 	@Field(() => Member, { nullable: true })
 	memberData?: Member;
 }

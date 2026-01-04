@@ -35,27 +35,12 @@ const ProductSchema = new Schema(
 			required: true,
 		},
 
-		isNegotiable: {
-			type: Boolean,
-			default: false,
-		},
-
 		productViews: {
 			type: Number,
 			default: 0,
 		},
 
 		productLikes: {
-			type: Number,
-			default: 0,
-		},
-
-		productComments: {
-			type: Number,
-			default: 0,
-		},
-
-		productRank: {
 			type: Number,
 			default: 0,
 		},
@@ -73,11 +58,6 @@ const ProductSchema = new Schema(
 
 		productDesc: {
 			type: String,
-		},
-
-		reportCount: {
-			type: Number,
-			default: 0,
 		},
 
 		isSold: {

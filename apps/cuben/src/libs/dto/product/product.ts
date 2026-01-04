@@ -31,20 +31,11 @@ export class Product {
     @Field(() => Number)
     productPrice: number;
 
-    @Field(() => Boolean)
-    isNegotiable: boolean;
-
     @Field(() => Int)
     productViews: number;
 
     @Field(() => Int)
     productLikes: number;
-
-    @Field(() => Int)
-    productComments: number;
-
-    @Field(() => Int)
-    productRank: number;
 
     @Field(() => [String])
     productImages: string[];
@@ -54,9 +45,6 @@ export class Product {
 
     @Field(() => String)
     memberId: ObjectId;
-
-    @Field(() => Int)
-    reportCount: number;
 
     @Field(() => Boolean)
     isSold: boolean;

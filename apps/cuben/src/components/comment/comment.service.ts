@@ -35,13 +35,6 @@ export class CommentService {
 		}
 
 		switch (input.commentGroup) {
-			case CommentGroup.PRODUCT:
-				await this.productService.productStatsEditor({
-					_id: input.commentRefId,
-					targetKey: 'productComments',
-					modifier: 1,
-				});
-				break;
 			case CommentGroup.ARTICLE:
 				await this.boardArticleService.boardArticleStatsEditor({
 					_id: input.commentRefId,

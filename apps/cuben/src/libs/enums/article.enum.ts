@@ -1,6 +1,6 @@
 import { registerEnumType } from '@nestjs/graphql';
 
-export enum BoardArticleCategory {
+export enum ArticleCategory {
 	COMMUNITY = 'COMMUNITY', 
 	MARKET = 'MARKET', 
 	CAREER = 'CAREER', 
@@ -8,14 +8,10 @@ export enum BoardArticleCategory {
 	EVENTS = 'EVENTS', 
 	HELP = 'HELP',
 }
-registerEnumType(BoardArticleCategory, {
-	name: 'BoardArticleCategory',
-});
+registerEnumType(ArticleCategory, { name: 'ArticleCategory' });
 
-export enum BoardArticleStatus {
+export enum ArticleStatus {
 	ACTIVE = 'ACTIVE',
 	DELETE = 'DELETE',
 }
-registerEnumType(BoardArticleStatus, {
-	name: 'BoardArticleStatus',
-});
+registerEnumType(ArticleStatus, { name: 'ArticleStatus' });

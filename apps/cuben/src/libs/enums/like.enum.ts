@@ -1,13 +1,19 @@
 import { registerEnumType } from '@nestjs/graphql';
 
-export enum LikeGroup {
+export enum LikeTarget {
 	MEMBER = 'MEMBER',
-	PRODUCT = 'PRODUCT',
 	POST = 'POST',
+	PRODUCT = 'PRODUCT',
 	ARTICLE = 'ARTICLE',
-	SAVE_POST = 'SAVE_POST',
-	SAVE_PRODUCT = 'SAVE_PRODUCT'
 }
-registerEnumType(LikeGroup, {
-	name: 'LikeGroup',
+registerEnumType(LikeTarget, {
+	name: 'LikeTarget',
+});
+
+export enum LikeAction {
+	LIKE = 'LIKE',
+	SAVE = 'SAVE',
+}
+registerEnumType(LikeAction, {
+	name: 'LikeAction',
 });

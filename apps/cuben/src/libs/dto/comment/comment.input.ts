@@ -19,8 +19,6 @@ export class CommentInput {
 	@IsNotEmpty()
 	@Field(() => String)
 	commentRefId: ObjectId;
-
-	memberId?: ObjectId;
 }
 
 @InputType()

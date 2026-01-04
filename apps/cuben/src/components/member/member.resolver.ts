@@ -34,10 +34,10 @@ export class MemberResolver {
 
 	@UseGuards(WithoutGuard)
 	@Query(() => Member)
-	public async getMember(@Args('memberId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Member> {
+	public async getMember(@Args('memberId') input: string, @AuthMember('_id') memberId: ObjectId | null): Promise<Member> {
 		console.log('Query: getMember');
 		const targetId = shapeIntoMongoObjectId(input);
-		return this.memberService.getMember(memberId, targetId);
+		return this.memberService.getMember(memberId || null, targetId);
 	}
 
 	@UseGuards(AuthGuard)
@@ -62,20 +62,9 @@ export class MemberResolver {
 
 	@UseGuards(WithoutGuard)
 	@Query(() => Members)
-	public async getAgents(@Args('input') input: AgentsInquiry, @AuthMember('_id') memberId: ObjectId): Promise<Members> {
+	public async getAgents(@Args('input') input: AgentsInquiry, @AuthMember('_id') memberId: ObjectId | null): Promise<Members> {
 		console.log('Query: getAgents');
-		return await this.memberService.getAgents(memberId, input);
-	}
-
-	@UseGuards(AuthGuard)
-	@Mutation(() => Member)
-	public async likeTargetMember(
-		@Args('memberId') input: string,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Member> {
-		console.log('Mutation: likeTargetMember');
-		const likeRefId = shapeIntoMongoObjectId(input);
-		return await this.memberService.likeTargetMember(memberId, likeRefId);
+		return await this.memberService.getAgents(memberId || null, input);
 	}
 
 	/** ADMIN **/
@@ -103,7 +92,7 @@ export class MemberResolver {
 		return `Hi ${authMember.memberNick}, you are ${authMember.memberType} (memberId: ${authMember._id})`;
 	}
 
-	// IMAGE UPLOADER (member.resolver.ts)
+	// IMAGE UPLOADER (o'zgarishsiz)
 	@UseGuards(AuthGuard)
 	@Mutation((returns) => String)
 	public async imageUploader(

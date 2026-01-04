@@ -1,4 +1,3 @@
-// PostService (commentTargetPost da skipStatsUpdate qo'shing, double update oldini olish uchun)
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
@@ -6,22 +5,27 @@ import { MemberService } from '../member/member.service';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import moment from 'moment';
 import { StatisticModifier, T } from '../../libs/types/common';
-import { lookupAuthMemberLiked, lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
+import { shapeIntoMongoObjectId } from '../../libs/config';
 import { LikeService } from '../like/like.service';
-import { LikeGroup } from '../../libs/enums/like.enum';
-import { LikeInput } from '../../libs/dto/like/like.input';
+import { MeLiked } from '../../libs/dto/like/like';
+import { CommentService } from '../comment/comment.service';
+import { CommentInput } from '../../libs/dto/comment/comment.input'; // CommentUpdate qo'shildi
 import { Post, Posts } from '../../libs/dto/post/post';
 import { PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
 import { PostUpdate } from '../../libs/dto/post/post.update';
 import { PostStatus } from '../../libs/enums/post.enum';
-import { CommentService } from '../comment/comment.service';
+import { LikeTarget, LikeAction } from '../../libs/enums/like.enum';
+import { CommentGroup, CommentStatus } from '../../libs/enums/comment.enum';
+import { LikeInput } from '../../libs/dto/like/like.input';
+import { CommentUpdate } from '../../libs/dto/comment/comment.update';
 
 @Injectable()
 export class PostService {
 	constructor(
-		@InjectModel('Post') private readonly postModel: Model<Post>,
+		@InjectModel('Post') private readonly postModel: Model<any>,
 		private memberService: MemberService,
 		private likeService: LikeService,
+		private commentService: CommentService,
 	) {}
 
 	public async createPost(input: PostInput): Promise<Post> {
@@ -32,32 +36,42 @@ export class PostService {
 				targetKey: 'memberPosts',
 				modifier: 1,
 			});
-			return result;
+			return result.toObject() as Post;
 		} catch (err) {
 			console.log('Error, Service.model:', err.message);
 			throw new BadRequestException(Message.CREATE_FAILED);
 		}
 	}
 
-	public async getPost(memberId: ObjectId, postId: ObjectId): Promise<Post> {
+	public async getPost(memberId: ObjectId | null, postId: ObjectId): Promise<Post> {
 		const search: T = {
 			_id: postId,
 			postStatus: PostStatus.ACTIVE,
 		};
 
-		const targetPost: Post = await this.postModel.findOne(search).lean().exec();
+		const targetPost: any = await this.postModel.findOne(search).lean().exec();
 		if (!targetPost) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
+		let meLiked: MeLiked = { liked: false, saved: false };
 		if (memberId) {
-			const likeInput = { memberId: memberId, likeRefId: postId, likeGroup: LikeGroup.POST };
-			targetPost.meLiked = await this.likeService.checkLikeExistence(likeInput);
+			const liked = await this.likeService.checkLikeExistence(memberId, {
+				refId: postId,
+				targetType: LikeTarget.POST,
+				action: LikeAction.LIKE,
+			});
 
-            const saveInput = { memberId: memberId, likeRefId: postId, likeGroup: LikeGroup.SAVE_POST };
-            targetPost.meSaved = await this.likeService.checkLikeExistence(saveInput);  
+			const saved = await this.likeService.checkLikeExistence(memberId, {
+				refId: postId,
+				targetType: LikeTarget.POST,
+				action: LikeAction.SAVE,
+			});
+
+			meLiked = { liked, saved };
 		}
 
+		targetPost.meLiked = meLiked;
 		targetPost.memberData = await this.memberService.getMember(null, targetPost.memberId);
-		return targetPost;
+		return targetPost as Post;
 	}
 
 	public async updatePost(memberId: ObjectId, input: PostUpdate): Promise<Post> {
@@ -82,120 +96,202 @@ export class PostService {
 			});
 		}
 
-		return result;
+		return result.toObject() as Post;
 	}
 
-	public async getPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
-	const match: T = { postStatus: PostStatus.ACTIVE };
-	const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
+	public async getPosts(memberId: ObjectId | null, input: PostsInquiry): Promise<Posts> {
+		const match: T = { postStatus: PostStatus.ACTIVE };
+		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
-	this.shapeMatchQuery(match, input);
-	console.log('match:', match);
+		this.shapeMatchQuery(match, input);
+		console.log('match:', match);
 
-	const result = await this.postModel
-		.aggregate([
-			{ $match: match },
-			{ $sort: sort },
-			{
-				$facet: {
-					list: [
-						{ $skip: (input.page - 1) * input.limit },
-						{ $limit: input.limit },
-						lookupAuthMemberLiked(memberId), 
-						{
-							$lookup: {
-								from: 'Like', 
-								let: { 
-									userId: memberId, 
-									postId: '$_id'    
-								},
-								pipeline: [
-									{
-										$match: {
-											$expr: {
-												$and: [
-													{ $eq: ['$memberId', '$$userId'] },  
-													{ $eq: ['$likeRefId', '$$postId'] }, 
-													{ $eq: ['$likeGroup', LikeGroup.SAVE_POST] },
-												],
+		const result = await this.postModel
+			.aggregate([
+				{ $match: match },
+				{ $sort: sort },
+				{
+					$facet: {
+						list: [
+							{ $skip: (input.page - 1) * input.limit },
+							{ $limit: input.limit },
+							{
+								$lookup: {
+									from: 'likes',
+									let: { 
+										userId: memberId, 
+										postId: '$_id'    
+									},
+									pipeline: [
+										{
+											$match: {
+												$expr: {
+													$and: [
+														{ $eq: ['$memberId', '$$userId'] },  
+														{ $eq: ['$refId', '$$postId'] }, 
+														{ $eq: ['$targetType', LikeTarget.POST] },
+														{ $eq: ['$action', LikeAction.LIKE] },
+													],
+												},
 											},
 										},
-									},
-									{ 
-										$project: { 
-											memberId: 1, 
-											likeRefId: 1, 
-											mySaves: { $const: true }  
-										} 
-									},
-								],
-								as: 'meSaved',
+										{ 
+											$project: { 
+												memberId: 1, 
+												refId: 1, 
+											} 
+										},
+									],
+									as: 'tempLiked',
+								},
 							},
-						},
-						lookupMember,
-						{ $unwind: '$memberData' },
-					],
-					metaCounter: [{ $count: 'total' }],
+							{
+								$lookup: {
+									from: 'likes',
+									let: { 
+										userId: memberId, 
+										postId: '$_id'    
+									},
+									pipeline: [
+										{
+											$match: {
+												$expr: {
+													$and: [
+														{ $eq: ['$memberId', '$$userId'] },  
+														{ $eq: ['$refId', '$$postId'] }, 
+														{ $eq: ['$targetType', LikeTarget.POST] },
+														{ $eq: ['$action', LikeAction.SAVE] },
+													],
+												},
+											},
+										},
+										{ 
+											$project: { 
+												memberId: 1, 
+												refId: 1, 
+											} 
+										},
+									],
+									as: 'tempSaved',
+								},
+							},
+							{
+								$addFields: {
+									meLiked: {
+										liked: { $gt: [ { $size: '$tempLiked' }, 0 ] },
+										saved: { $gt: [ { $size: '$tempSaved' }, 0 ] }
+									}
+								}
+							},
+							{ $project: { tempLiked: 0, tempSaved: 0 } },
+							{
+								$lookup: {
+									from: 'members',
+									localField: 'memberId',
+									foreignField: '_id',
+									as: 'memberData',
+								},
+							},
+							{ $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },
+						],
+						metaCounter: [{ $count: 'total' }],
+					},
 				},
-			},
-		])
-		.exec();
-	if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+			])
+			.exec();
+		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-	return result[0];
-}
+		return result[0] as Posts;
+	}
 
 	private shapeMatchQuery(match: T, input: PostsInquiry): void {
 		const { memberId, text } = input.search;
 		if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
 
-		if (text) match.postTitle = { $regex: new RegExp(text, 'i') };
+		if (text) match.$or = [
+			{ postTitle: { $regex: new RegExp(text, 'i') } },
+			{ postContent: { $regex: new RegExp(text, 'i') } }
+		];
 	}
 
 	public async likeTargetPost(memberId: ObjectId, likeRefId: ObjectId): Promise<Post> {
-		const target: Post = await this.postModel.findOne({ _id: likeRefId, postStatus: PostStatus.ACTIVE }).exec();
+		const target: any = await this.postModel.findOne({ _id: likeRefId, postStatus: PostStatus.ACTIVE }).exec();
 		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
 		const input: LikeInput = {
-			memberId: memberId,
-			likeRefId: likeRefId,
-			likeGroup: LikeGroup.POST,
+			refId: likeRefId,
+			targetType: LikeTarget.POST,
+			action: LikeAction.LIKE,
 		};
 
-		const modifier: number = await this.likeService.toggleLike(input);
-		const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier: modifier });
+		const modifier: number = await this.likeService.toggleLike(memberId, input);
+		const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier });
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result;
+		return result.toObject() as Post;
 	}
-
 
 	public async saveTargetPost(memberId: ObjectId, saveRefId: ObjectId): Promise<Post> {
-		const target: Post = await this.postModel.findOne({ _id: saveRefId, postStatus: PostStatus.ACTIVE }).exec();
+		const target: any = await this.postModel.findOne({ _id: saveRefId, postStatus: PostStatus.ACTIVE }).exec();
 		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
 		const input: LikeInput = {
-			memberId: memberId,
-			likeRefId: saveRefId,
-			likeGroup: LikeGroup.SAVE_POST,
+			refId: saveRefId,
+			targetType: LikeTarget.POST,
+			action: LikeAction.SAVE,
 		};
 
-		const modifier: number = await this.likeService.toggleLike(input);
-		const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier: modifier });
+		const modifier: number = await this.likeService.toggleLike(memberId, input);
+		const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier });
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result;
+		return result.toObject() as Post;
 	}
 
-	public async postStatsEditor(input: StatisticModifier): Promise<Post> {
+	public async addCommentToPost(memberId: ObjectId, postId: ObjectId, commentContent: string): Promise<Post> {
+		const target: any = await this.postModel.findOne({ _id: postId, postStatus: PostStatus.ACTIVE }).exec();
+		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
+		const input: CommentInput = {
+			commentGroup: CommentGroup.POST,
+			commentRefId: postId,
+			commentContent: commentContent,
+		};
+
+		await this.commentService.createComment(memberId, input);
+
+		const result = await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: 1 });
+
+		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+		return result.toObject() as Post;
+	}
+
+	public async deleteCommentFromPost(memberId: ObjectId, commentId: ObjectId): Promise<Post> {
+		const targetComment: any = await this.commentService.getCommentById(commentId);
+		if (!targetComment || targetComment.memberId.toString() !== memberId.toString() || targetComment.commentStatus === CommentStatus.DELETE) {
+			throw new BadRequestException('Comment not found or not authorized');
+		}
+
+		const updateInput: CommentUpdate = {
+			_id: commentId,
+			commentStatus: CommentStatus.DELETE,
+		};
+		await this.commentService.updateComment(memberId, updateInput); // Fix: updateComment ishlatildi
+
+		const postId = targetComment.commentRefId;
+		const result = await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: -1 });
+
+		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+		return result.toObject() as Post;
+	}
+
+	public async postStatsEditor(input: StatisticModifier): Promise<any> {
 		const { _id, targetKey, modifier } = input;
 		return await this.postModel
 			.findByIdAndUpdate(
 				_id,
 				{ $inc: { [targetKey]: modifier } },
-				{
-					new: true,
-				},
+				{ new: true },
 			)
 			.exec();
 	}

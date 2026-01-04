@@ -4,10 +4,10 @@ import { ProductModule } from './product/product.module';
 import { LikeModule } from './like/like.module';
 import { FollowModule } from './follow/follow.module';
 import { ViewModule } from './view/view.module';
-import { CommentModule } from './comment/comment.module';
-import { BoardArticleModule } from './board-article/board-article.module';
+import { ArticleModule } from './article/article.module';
 import { AuthModule } from './auth/auth.module';
 import { PostModule } from './post/post.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -18,7 +18,7 @@ import { PostModule } from './post/post.module';
     FollowModule, 
     ViewModule, 
     CommentModule, 
-    BoardArticleModule, 
+    ArticleModule, 
     AuthModule, 
   ]
 })

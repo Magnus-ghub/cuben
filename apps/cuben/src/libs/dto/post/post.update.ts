@@ -14,7 +14,7 @@ export class PostUpdate {
 	postStatus?: PostStatus;
 
 	@IsOptional()
-	@Length(3, 70)
+	@Length(3, 500)
 	@Field(() => String, { nullable: true })
 	postTitle?: string;
 

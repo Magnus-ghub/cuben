@@ -6,7 +6,7 @@ import CommentSchema from '../../schemas/Comment.model';
 import { AuthModule } from '../auth/auth.module';
 import { MemberModule } from '../member/member.module';
 import { ProductModule } from '../product/product.module';
-import { BoardArticleModule } from '../board-article/board-article.module';
+import { ArticleModule } from '../article/article.module';
 import { PostModule } from '../post/post.module';
 
 @Module({
@@ -21,8 +21,9 @@ import { PostModule } from '../post/post.module';
     PostModule,
     MemberModule,
     ProductModule,
-    BoardArticleModule,
+    ArticleModule,
   ],
-  providers: [CommentResolver, CommentService]
+  providers: [CommentResolver, CommentService],
+  exports: [CommentService],
 })
 export class CommentModule {}

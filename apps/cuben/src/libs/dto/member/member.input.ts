@@ -73,12 +73,10 @@ export class AgentsInquiry {
     @IsNotEmpty()
     @Field(() => AISearch)
     search: AISearch;
-
 } 
 
 @InputType()
 class MISearch {
-
     @IsOptional()
     @Field(() => MemberStatus, { nullable: true })
     memberStatus?: MemberStatus;
@@ -89,7 +87,7 @@ class MISearch {
 
     @IsOptional()
     @Field(() => String, { nullable: true })
-    text?: string;
+    text?: string; // Service da $or bilan nick + fullName
 }
 
 @InputType()
@@ -116,5 +114,4 @@ export class MembersInquiry {
     @IsOptional()
     @Field(() => MISearch)
     search?: MISearch;
-
 }    

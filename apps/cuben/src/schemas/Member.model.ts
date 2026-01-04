@@ -1,4 +1,4 @@
-import { Schema}  from 'mongoose';
+import { Schema } from 'mongoose';
 import { MemberAuthType, MemberStatus, MemberType } from '../libs/enums/member.enum';
 
 const MemberSchema = new Schema({
@@ -35,7 +35,7 @@ const MemberSchema = new Schema({
     memberPassword: {
         type: String,
         select: false,
-        reqired: true,
+        required: true, // Typo fix: 'reqired' → 'required'
     },
 
     memberFullName: {
@@ -87,7 +87,7 @@ const MemberSchema = new Schema({
 
     memberLikes: {
         type: Number,
-        default: 0,
+        default: 0, // Saqladim (content likes uchun)
     },
 
     memberViews: {

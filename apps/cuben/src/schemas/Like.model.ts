@@ -1,15 +1,21 @@
 import { Schema } from 'mongoose';
-import { ViewGroup } from '../libs/enums/view.enum';
+import { LikeAction, LikeTarget } from '../libs/enums/like.enum';
 
 const LikeSchema = new Schema(
 	{
-		likeGroup: {
+		targetType: {
 			type: String,
-			enum: ViewGroup,
+			enum: Object.values(LikeTarget),
 			required: true,
 		},
 
-		likeRefId: {
+		action: {
+			type: String,
+			enum: Object.values(LikeAction),
+			required: true,
+		},
+
+		refId: {
 			type: Schema.Types.ObjectId,
 			required: true,
 		},
@@ -23,6 +29,9 @@ const LikeSchema = new Schema(
 	{ timestamps: true, collection: 'likes' },
 );
 
-LikeSchema.index({ memberId: 1, likeRefId: 1 }, { unique: true });
+LikeSchema.index(
+	{ memberId: 1, refId: 1, targetType: 1, action: 1 },
+	{ unique: true },
+);
 
 export default LikeSchema;

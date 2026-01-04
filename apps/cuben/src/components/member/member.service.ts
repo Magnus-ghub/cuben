@@ -8,13 +8,11 @@ import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
 import { AuthService } from '../auth/auth.service';
 import { StatisticModifier, T } from '../../libs/types/common';
 import { MemberUpdate } from '../../libs/dto/member/member.update';
-import { ViewService } from '../view/view.service';
-import { ViewGroup } from '../../libs/enums/view.enum';
 import { LikeService } from '../like/like.service';
-import { LikeInput } from '../../libs/dto/like/like.input';
-import { LikeGroup } from '../../libs/enums/like.enum';
-import { lookupAuthMemberLiked } from '../../libs/config';
+import { LikeTarget, LikeAction } from '../../libs/enums/like.enum';
 import { Follower, Following, MeFollowed } from '../../libs/dto/follow/follow';
+import { lookupMember } from '../../libs/config';
+import { MeLiked } from '../../libs/dto/like/like';
 
 @Injectable()
 export class MemberService {
@@ -22,7 +20,6 @@ export class MemberService {
 		@InjectModel('Member') private readonly memberModel: Model<Member>,
 		@InjectModel('Follow') private readonly followModel: Model<Follower | Following>, 
 		private authService: AuthService,
-		private viewService: ViewService,
 		private likeService: LikeService,
 	) {}
 
@@ -55,7 +52,7 @@ export class MemberService {
 		return response;
 	}
 
-	public async getMember(memberId: ObjectId, targetId: ObjectId): Promise<Member> {
+	public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<Member> {
 		const search: T = {
 			_id: targetId,
 			memberStatus: {
@@ -65,19 +62,21 @@ export class MemberService {
 		const targetMember = await this.memberModel.findOne(search).lean().exec();
 		if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
+		// View removed
+
+		// Follow saqladim
+		let meFollowed: MeFollowed[] = [];
 		if (memberId) {
-			const viewInput = { memberId: memberId, viewRefId: targetId, viewGroup: ViewGroup.MEMBER };
-			const newView = await this.viewService.recordView(viewInput);
-			if (newView) {
-				await this.memberModel.findOneAndUpdate(search, { $inc: { memberViews: 1 } }, { new: true }).exec();
-				targetMember.memberViews++;
-			}
-
-			const likeInput = { memberId: memberId, likeRefId: targetId, likeGroup: LikeGroup.MEMBER };
-            targetMember.meLiked = await this.likeService.checkLikeExistence(likeInput);
-
-			targetMember.meFollowed = await this.checkSubscription(memberId, targetId);
+			meFollowed = await this.checkSubscription(memberId, targetId);
 		}
+		targetMember.meFollowed = meFollowed;
+
+		// meLiked (content likes/saves)
+		let meLiked: MeLiked = { liked: false, saved: false };
+		if (memberId) {
+			meLiked = await this.likeService.getMeLiked(memberId, targetId, LikeTarget.MEMBER); // TargetType.MEMBER ni qayta qo'shish mumkin, lekin like removed bo'lgani uchun content uchun ishlatdim
+		}
+		targetMember.meLiked = meLiked;
 
 		return targetMember;
 	}
@@ -104,12 +103,15 @@ export class MemberService {
 		return result;
 	}
 
-	public async getAgents(memberId: ObjectId, input: AgentsInquiry): Promise<Members> {
+	public async getAgents(memberId: ObjectId | null, input: AgentsInquiry): Promise<Members> {
 		const { text } = input.search;
 		const match: T = { memberType: MemberType.AGENT, memberStatus: MemberStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
-		if (text) match.memberNick = { $regex: new RegExp(text, 'i') };
+		if (text) match.$or = [
+			{ memberNick: { $regex: new RegExp(text, 'i') } },
+			{ memberFullName: { $regex: new RegExp(text, 'i') } }
+		];
 		console.log('match:', match);
 
 		const result = await this.memberModel
@@ -121,7 +123,38 @@ export class MemberService {
 						list: [
 							{ $skip: (input.page - 1) * input.limit },
 							{ $limit: input.limit },
-							lookupAuthMemberLiked(memberId),
+							{
+								$lookup: {
+									from: 'likes',
+									let: { userId: memberId, memberId: '$_id' },
+									pipeline: [
+										{
+											$match: {
+												$expr: {
+													$and: [
+														{ $eq: ['$memberId', '$$userId'] },
+														{ $in: ['$targetType', [LikeTarget.POST, LikeTarget.PRODUCT, LikeTarget.ARTICLE]] },
+														{ $in: ['$action', [LikeAction.LIKE, LikeAction.SAVE]] },
+													],
+												},
+											},
+										},
+										{ $count: 'totalLikesSaves' },
+									],
+									as: 'tempMeLiked',
+								},
+							},
+							{
+								$addFields: {
+									// meLiked: {
+									// 	liked: { $gt: [{ $size: { $filter: { input: '$tempMeLiked', cond: { $eq: ['$$this.action', LikeAction.LIKE] } } }, 0] },
+									// 	saved: { $gt: [{ $size: { $filter: { input: '$tempMeLiked', cond: { $eq: ['$$this.action', LikeAction.SAVE] } } }, 0] }
+									// }
+								}
+							},
+							{ $project: { tempMeLiked: 0 } },
+							lookupMember,
+							{ $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },
 						],
 						metaCounter: [{ $count: 'total' }],
 					},
@@ -133,26 +166,6 @@ export class MemberService {
 		return result[0];
 	}
 
-	public async likeTargetMember(memberId: ObjectId, likeRefId: ObjectId): Promise<Member> {
-		const target: Member = await this.memberModel
-			.findOne({ _id: likeRefId, memberStatus: MemberStatus.ACTIVE })
-			.exec();
-		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
-		const input: LikeInput = {
-			memberId: memberId,
-			likeRefId: likeRefId,
-			likeGroup: LikeGroup.MEMBER,
-		};
-
-		// LIKE TOGGLE via Like Module
-		const modifier: number = await this.likeService.toggleLike(input);
-		const result = await this.memberStatsEditor({ _id: likeRefId, targetKey: 'memberLikes', modifier: modifier });
-
-		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result;
-	}
-
 	public async getAllMembersByAdmin(input: MembersInquiry): Promise<Members> {
 		const { memberStatus, memberType, text } = input.search;
 		const match: T = {};
@@ -160,7 +173,10 @@ export class MemberService {
 
 		if (memberStatus) match.memberStatus = memberStatus;
 		if (memberType) match.memberType = memberType;
-		if (text) match.memberNick = { $regex: new RegExp(text, 'i') };
+		if (text) match.$or = [
+			{ memberNick: { $regex: new RegExp(text, 'i') } },
+			{ memberFullName: { $regex: new RegExp(text, 'i') } }
+		];
 		console.log('match:', match);
 
 		const result = await this.memberModel
@@ -169,7 +185,20 @@ export class MemberService {
 				{ $sort: sort },
 				{
 					$facet: {
-						list: [{ $skip: (input.page - 1) * input.limit }, { $limit: input.limit }],
+						list: [
+							{ $skip: (input.page - 1) * input.limit },
+							{ $limit: input.limit },
+							{
+								$addFields: {
+									meLiked: {
+										liked: false,
+										saved: false
+									}
+								}
+							},
+							lookupMember,
+							{ $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },
+						],
 						metaCounter: [{ $count: 'total' }],
 					},
 				},
@@ -186,7 +215,7 @@ export class MemberService {
 		return result;
 	}
 
-	public async memberStatsEditor(input: StatisticModifier): Promise<Member> {
+	public async memberStatsEditor(input: StatisticModifier): Promise<any> {
 		const { _id, targetKey, modifier } = input;
 		return await this.memberModel
 			.findByIdAndUpdate(

@@ -6,6 +6,7 @@ import PostSchema from '../../schemas/Post.model';
 import { AuthModule } from '../auth/auth.module';
 import { MemberModule } from '../member/member.module';
 import { LikeModule } from '../like/like.module';
+import { CommentModule } from '../comment/comment.module';
 
 
 @Module({
@@ -19,6 +20,7 @@ import { LikeModule } from '../like/like.module';
     AuthModule,
     MemberModule,
     LikeModule,
+    CommentModule
   ],  
   providers: [PostService, PostResolver],
   exports: [PostService],

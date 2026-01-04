@@ -38,14 +38,14 @@ export class Member {
 	@Field(() => String, { nullable: true })
 	memberDesc?: string;
 
-	@Field(() => Int)
-	memberProducts?: number;
+	@Field(() => Int, { nullable: true })
+	memberProducts?: number; // Optional
 
-	@Field(() => Int)
-	memberPosts?: number;
+	@Field(() => Int, { nullable: true })
+	memberPosts?: number; // Optional
 
-	@Field(() => Int)
-	memberArticles: number;
+	@Field(() => Int, { nullable: true })
+	memberArticles?: number; // Optional
 
 	@Field(() => Int)
 	memberFollowers: number;
@@ -57,7 +57,7 @@ export class Member {
 	memberPoints: number;
 
 	@Field(() => Int)
-	memberLikes: number;
+	memberLikes: number; // Saqladim
 
 	@Field(() => Int)
 	memberViews: number;
@@ -87,11 +87,11 @@ export class Member {
 	accessToken?: string;
 
 	/** from aggregation **/
-	@Field(() => [MeLiked], { nullable: true })
-	meLiked?: MeLiked[];
+	@Field(() => MeLiked, { nullable: true }) // Fix: single MeLiked (array emas)
+	meLiked?: MeLiked; 
 
 	@Field(() => [MeFollowed], { nullable: true })
-	meFollowed?: MeFollowed[];
+	meFollowed?: MeFollowed[]; // Follow saqladim
 }
 
 @ObjectType()
@@ -105,6 +105,6 @@ export class Members {
 	@Field(() => [Member])
 	list: Member[];
 
-	@Field(() => [TotalCounter], { nullable: true })
-	metaCounter: TotalCounter[];
+	@Field(() => TotalCounter, { nullable: true }) // Fix: single (array emas)
+	metaCounter: TotalCounter;
 }

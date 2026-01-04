@@ -5,7 +5,7 @@ const ViewSchema = new Schema(
 	{
 		viewGroup: {
 			type: String,
-			enum: ViewGroup,
+			enum: Object.values(ViewGroup),
 			required: true,
 		},
 
@@ -16,13 +16,16 @@ const ViewSchema = new Schema(
 
 		memberId: {
 			type: Schema.Types.ObjectId,
-			required: true,
 			ref: 'Member',
+			required: false,
 		},
 	},
 	{ timestamps: true, collection: 'views' },
 );
 
-ViewSchema.index({ memberId: 1, viewRefId: 1 }, { unique: true });
+ViewSchema.index(
+	{ memberId: 1, viewRefId: 1, viewGroup: 1 },
+	{ unique: true, sparse: true },
+);
 
 export default ViewSchema;

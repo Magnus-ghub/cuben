@@ -1,18 +1,18 @@
 import { Schema } from 'mongoose';
-import { BoardArticleCategory, BoardArticleStatus } from '../libs/enums/board-article.enum';
+import { ArticleCategory, ArticleStatus } from '../libs/enums/article.enum';
 
-const BoardArticleSchema = new Schema(
+const ArticleSchema = new Schema(
 	{
 		articleCategory: {
 			type: String,
-			enum: BoardArticleCategory,
+			enum: ArticleCategory,
 			required: true,
 		},
 
 		articleStatus: {
 			type: String,
-			enum: BoardArticleStatus,
-			default: BoardArticleStatus.ACTIVE,
+			enum: ArticleStatus,
+			default: ArticleStatus.ACTIVE,
 		},
 
 		articleTitle: {
@@ -50,7 +50,7 @@ const BoardArticleSchema = new Schema(
 			ref: 'Member',
 		},
 	},
-	{ timestamps: true, collection: 'boardArticles' },
+	{ timestamps: true, collection: 'Articles' },
 );
 
-export default BoardArticleSchema;
+export default ArticleSchema;

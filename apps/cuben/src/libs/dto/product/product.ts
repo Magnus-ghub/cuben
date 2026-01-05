@@ -36,6 +36,9 @@ export class Product {
     @Field(() => Int)
     productLikes: number;
 
+    @Field(() => Int)
+    productSaves: number;
+
     @Field(() => [String])
     productImages: string[];
 

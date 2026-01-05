@@ -13,20 +13,19 @@ import { ViewGroup } from '../../libs/enums/view.enum';
 import { ProductUpdate } from '../../libs/dto/product/product.update';
 import { lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
 import { LikeService } from '../like/like.service';
-import { MeLiked } from '../../libs/dto/like/like'; // MeLiked qo'shildi
-import { LikeTarget, LikeAction } from '../../libs/enums/like.enum'; // Yangi
+import { LikeTarget, LikeAction } from '../../libs/enums/like.enum';
 import { LikeInput } from '../../libs/dto/like/like.input';
 
 @Injectable()
 export class ProductService {
-	constructor(
-		@InjectModel('Product') private readonly productModel: Model<Product>,
-		private memberService: MemberService,
-		private viewService: ViewService,
-		private likeService: LikeService,
-	) {}
+    constructor(
+        @InjectModel('Product') private readonly productModel: Model<Product>,
+        private memberService: MemberService,
+        private viewService: ViewService,
+        private likeService: LikeService,
+    ) {}
 
-	public async createProduct(input: ProductInput): Promise<Product> {
+    public async createProduct(input: ProductInput): Promise<Product> {
         try {
             const result = await this.productModel.create(input);
             await this.memberService.memberStatsEditor({
@@ -41,248 +40,268 @@ export class ProductService {
         }
     }
 
-	public async getProduct(memberId: ObjectId | null, productId: ObjectId): Promise<Product> {
-		const search: T = {
-			_id: productId,
-			productStatus: ProductStatus.ACTIVE,
-		};
+    public async getProduct(memberId: ObjectId | null, productId: ObjectId): Promise<Product> {
+        const search: T = {
+            _id: productId,
+            productStatus: ProductStatus.ACTIVE,
+        };
 
-		const targetProduct: any = await this.productModel.findOne(search).lean().exec();
-		if (!targetProduct) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+        const targetProduct: any = await this.productModel.findOne(search).lean().exec();
+        if (!targetProduct) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		// View check/create (+1)
-		if (memberId) {
-			const viewInput = { viewRefId: productId, viewGroup: ViewGroup.PRODUCT };
-			const newView = await this.viewService.recordView({ ...viewInput, memberId });
-			if (newView) {
-				await this.productStatsEditor({ _id: productId, targetKey: 'productViews', modifier: 1 });
-				targetProduct.productViews++;
-			}
-		} else {
-			// Anonymous
-			const viewInput = { viewRefId: productId, viewGroup: ViewGroup.PRODUCT };
-			const newView = await this.viewService.recordView(viewInput);
-			if (newView) {
-				await this.productStatsEditor({ _id: productId, targetKey: 'productViews', modifier: 1 });
-				targetProduct.productViews++;
-			}
-		}
+        // View check/create (+1)
+        if (memberId) {
+            const viewInput = { viewRefId: productId, viewGroup: ViewGroup.PRODUCT };
+            const newView = await this.viewService.recordView({ ...viewInput, memberId });
+            if (newView) {
+                await this.productStatsEditor({ _id: productId, targetKey: 'productViews', modifier: 1 });
+                targetProduct.productViews++;
+            }
+        } else {
+            // Anonymous
+            const viewInput = { viewRefId: productId, viewGroup: ViewGroup.PRODUCT };
+            const newView = await this.viewService.recordView(viewInput);
+            if (newView) {
+                await this.productStatsEditor({ _id: productId, targetKey: 'productViews', modifier: 1 });
+                targetProduct.productViews++;
+            }
+        }
 
-		// meLiked (single)
-		let meLiked: MeLiked = { liked: false, saved: false };
-		if (memberId) {
-			meLiked = await this.likeService.getMeLiked(memberId, productId, LikeTarget.PRODUCT);
-		}
-		targetProduct.meLiked = meLiked;
+        // meLiked
+        if (memberId) {
+            targetProduct.meLiked = await this.likeService.getMeLiked(memberId, productId, LikeTarget.PRODUCT);
+        } else {
+            targetProduct.meLiked = { liked: false, saved: false };
+        }
 
-		targetProduct.memberData = await this.memberService.getMember(null, targetProduct.memberId);
-		return targetProduct as Product;
-	}
+        // Member data
+        targetProduct.memberData = await this.memberService.getMember(null, targetProduct.memberId);
+        
+        return targetProduct as Product;
+    }
 
-	public async updateProduct(memberId: ObjectId, input: ProductUpdate): Promise<Product> {
-		let { productStatus, soldAt, deletedAt } = input;
-		const search: T = {
-			_id: input._id,
-			memberId: memberId,
-			productStatus: ProductStatus.ACTIVE,
-		};
+    public async updateProduct(memberId: ObjectId, input: ProductUpdate): Promise<Product> {
+        let { productStatus, soldAt, deletedAt } = input;
+        const search: T = {
+            _id: input._id,
+            memberId: memberId,
+            productStatus: ProductStatus.ACTIVE,
+        };
 
-		if (productStatus === ProductStatus.SOLD) soldAt = moment().toDate();
-		else if (productStatus === ProductStatus.DELETE) deletedAt = moment().toDate();
+        if (productStatus === ProductStatus.SOLD) soldAt = moment().toDate();
+        else if (productStatus === ProductStatus.DELETE) deletedAt = moment().toDate();
 
-		const result = await this.productModel.findOneAndUpdate(search, input, { new: true }).exec();
-		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+        const result = await this.productModel.findOneAndUpdate(search, input, { new: true }).exec();
+        if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
 
-		if (soldAt || deletedAt) {
-			await this.memberService.memberStatsEditor({
-				_id: memberId,
-				targetKey: 'memberProducts',
-				modifier: -1,
-			});
-		}
+        if (soldAt || deletedAt) {
+            await this.memberService.memberStatsEditor({
+                _id: memberId,
+                targetKey: 'memberProducts',
+                modifier: -1,
+            });
+        }
 
-		return result.toObject() as Product;
-	}
+        return result.toObject() as Product;
+    }
 
-	public async getProducts(memberId: ObjectId | null, input: ProductsInquiry): Promise<Products> {
-		const match: T = { productStatus: ProductStatus.ACTIVE };
-		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
+    public async getProducts(memberId: ObjectId | null, input: ProductsInquiry): Promise<Products> {
+        const match: T = { productStatus: ProductStatus.ACTIVE };
+        const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
-		this.shapeMatchQuery(match, input);
-		console.log('match:', match);
+        this.shapeMatchQuery(match, input);
+        console.log('match:', match);
 
-		const result = await this.productModel
-			.aggregate([
-				{ $match: match },
-				{ $sort: sort },
-				{
-					$facet: {
-						list: [
-							{ $skip: (input.page - 1) * input.limit },
-							{ $limit: input.limit },
-							// Like lookup (LIKE)
-							{
-								$lookup: {
-									from: 'likes',
-									let: { userId: memberId, productId: '$_id' },
-									pipeline: [
-										{
-											$match: {
-												$expr: {
-													$and: [
-														{ $eq: ['$memberId', '$$userId'] },
-														{ $eq: ['$refId', '$$productId'] },
-														{ $eq: ['$targetType', LikeTarget.PRODUCT] },
-														{ $eq: ['$action', LikeAction.LIKE] },
-													],
-												},
-											},
-										},
-										{ $project: { memberId: 1, refId: 1 } },
-									],
-									as: 'tempLiked',
-								},
-							},
-							// Save lookup (SAVE)
-							{
-								$lookup: {
-									from: 'likes',
-									let: { userId: memberId, productId: '$_id' },
-									pipeline: [
-										{
-											$match: {
-												$expr: {
-													$and: [
-														{ $eq: ['$memberId', '$$userId'] },
-														{ $eq: ['$refId', '$$productId'] },
-														{ $eq: ['$targetType', LikeTarget.PRODUCT] },
-														{ $eq: ['$action', LikeAction.SAVE] },
-													],
-												},
-											},
-										},
-										{ $project: { memberId: 1, refId: 1 } },
-									],
-									as: 'tempSaved',
-								},
-							},
-							// MeLiked yaratish
-							{
-								$addFields: {
-									meLiked: {
-										liked: { $gt: [{ $size: '$tempLiked' }, 0] },
-										saved: { $gt: [{ $size: '$tempSaved' }, 0] }
-									}
-								}
-							},
-							{ $project: { tempLiked: 0, tempSaved: 0 } },
-							lookupMember,
-							{ $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },
-						],
-						metaCounter: [{ $count: 'total' }],
-					},
-				},
-			])
-			.exec();
-		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+        // Agar user login qilmagan bo'lsa
+        if (!memberId) {
+            const result = await this.productModel
+                .aggregate([
+                    { $match: match },
+                    { $sort: sort },
+                    {
+                        $facet: {
+                            list: [
+                                { $skip: (input.page - 1) * input.limit },
+                                { $limit: input.limit },
+                                lookupMember,
+                                { $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },
+                            ],
+                            metaCounter: [{ $count: 'total' }],
+                        },
+                    },
+                ])
+                .exec();
+            
+            if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+            return result[0] as Products;
+        }
 
-		return result[0] as Products;
-	}
+        // User login qilgan bo'lsa - meLiked bilan
+        const result = await this.productModel
+            .aggregate([
+                { $match: match },
+                { $sort: sort },
+                {
+                    $facet: {
+                        list: [
+                            { $skip: (input.page - 1) * input.limit },
+                            { $limit: input.limit },
+                            // LIKE lookup
+                            {
+                                $lookup: {
+                                    from: 'likes',
+                                    let: { productId: '$_id' },
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $expr: {
+                                                    $and: [
+                                                        { $eq: ['$memberId', memberId] },
+                                                        { $eq: ['$refId', '$$productId'] },
+                                                        { $eq: ['$targetType', LikeTarget.PRODUCT] },
+                                                        { $eq: ['$action', LikeAction.LIKE] },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    as: 'likedStatus',
+                                },
+                            },
+                            // SAVE lookup
+                            {
+                                $lookup: {
+                                    from: 'likes',
+                                    let: { productId: '$_id' },
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $expr: {
+                                                    $and: [
+                                                        { $eq: ['$memberId', memberId] },
+                                                        { $eq: ['$refId', '$$productId'] },
+                                                        { $eq: ['$targetType', LikeTarget.PRODUCT] },
+                                                        { $eq: ['$action', LikeAction.SAVE] },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    as: 'savedStatus',
+                                },
+                            },
+                            // MeLiked yaratish
+                            {
+                                $addFields: {
+                                    meLiked: {
+                                        liked: { $gt: [{ $size: '$likedStatus' }, 0] },
+                                        saved: { $gt: [{ $size: '$savedStatus' }, 0] }
+                                    }
+                                }
+                            },
+                            { $project: { likedStatus: 0, savedStatus: 0 } },
+                            lookupMember,
+                            { $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },
+                        ],
+                        metaCounter: [{ $count: 'total' }],
+                    },
+                },
+            ])
+            .exec();
+        
+        if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+        return result[0] as Products;
+    }
 
-	public async getFavorites(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+    // ❤️ MY FAVORITES
+    public async getFavorites(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+        console.log('📋 Getting Favorite Products (LIKED)...');
         return await this.likeService.getFavoriteProducts(memberId, input);
     }
 
-    public async getVisited(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
-        return await this.viewService.getVisitedProducts(memberId, input); // Faraz, viewService da method bor
+    // 💾 SAVED ITEMS
+    public async getSavedProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+        console.log('📋 Getting Saved Products...');
+        return await this.likeService.getSavedProducts(memberId, input);
     }
 
-	private shapeMatchQuery(match: T, input: ProductsInquiry): void {
-		const { memberId, locationList, typeList, periodsRange, pricesRange, text, condition } = input.search; // condition qo'shildi
-		if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
-		if (locationList && locationList.length) match.productLocation = { $in: locationList };
-		if (typeList && typeList.length) match.productType = { $in: typeList };
-		if (condition) match.productCondition = condition; // Qo'shildi
-		if (pricesRange) match.productPrice = { $gte: pricesRange.start, $lte: pricesRange.end };
-		if (periodsRange) match.createdAt = { $gte: periodsRange.start, $lte: periodsRange.end };
+    // 👁️ VISITED
+    public async getVisited(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+        return await this.viewService.getVisitedProducts(memberId, input);
+    }
 
-		if (text) match.$or = [ // $or bilan yaxshilandi
-			{ productTitle: { $regex: new RegExp(text, 'i') } },
-			{ productDesc: { $regex: new RegExp(text, 'i') } }
-		];
-	}
+    private shapeMatchQuery(match: T, input: ProductsInquiry): void {
+        const { memberId, locationList, typeList, periodsRange, pricesRange, text, condition } = input.search;
+        
+        if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
+        if (locationList && locationList.length) match.productLocation = { $in: locationList };
+        if (typeList && typeList.length) match.productType = { $in: typeList };
+        if (condition) match.productCondition = condition;
+        if (pricesRange) match.productPrice = { $gte: pricesRange.start, $lte: pricesRange.end };
+        if (periodsRange) match.createdAt = { $gte: periodsRange.start, $lte: periodsRange.end };
 
-	public async likeTargetProduct(memberId: ObjectId, likeRefId: ObjectId): Promise<Product> {
-		const target: any = await this.productModel
-			.findOne({ _id: likeRefId, productStatus: ProductStatus.ACTIVE })
-			.exec();
-		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+        if (text) match.$or = [
+            { productTitle: { $regex: new RegExp(text, 'i') } },
+            { productDesc: { $regex: new RegExp(text, 'i') } }
+        ];
+    }
 
-		const input: LikeInput = {
-			refId: likeRefId,
-			targetType: LikeTarget.PRODUCT,
-			action: LikeAction.LIKE,
-		};
+    // ❤️ LIKE TOGGLE
+    public async likeTargetProduct(memberId: ObjectId, likeRefId: ObjectId): Promise<Product> {
+        const target: any = await this.productModel
+            .findOne({ _id: likeRefId, productStatus: ProductStatus.ACTIVE })
+            .exec();
+        if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		// LIKE TOGGLE via Like Module
-		const modifier: number = await this.likeService.toggleLike(memberId, input); // memberId alohida
-		const result = await this.productStatsEditor({ _id: likeRefId, targetKey: 'productLikes', modifier: modifier });
+        const input: LikeInput = {
+            refId: likeRefId,
+            targetType: LikeTarget.PRODUCT,
+            action: LikeAction.LIKE,
+        };
 
-		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result.toObject() as Product;
-	}
+        const modifier: number = await this.likeService.toggleLike(memberId, input); 
+        const result = await this.productStatsEditor({ 
+            _id: likeRefId, 
+            targetKey: 'productLikes', 
+            modifier: modifier 
+        });
 
-    // Yangi: Save method
+        if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+        return result.toObject() as Product;
+    }
+
+    // 💾 SAVE TOGGLE
     public async saveTargetProduct(memberId: ObjectId, saveRefId: ObjectId): Promise<Product> {
-		const target: any = await this.productModel
-			.findOne({ _id: saveRefId, productStatus: ProductStatus.ACTIVE })
-			.exec();
-		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+        const target: any = await this.productModel
+            .findOne({ _id: saveRefId, productStatus: ProductStatus.ACTIVE })
+            .exec();
+        if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		const input: LikeInput = {
-			refId: saveRefId,
-			targetType: LikeTarget.PRODUCT,
-			action: LikeAction.SAVE,
-		};
+        const input: LikeInput = {
+            refId: saveRefId,
+            targetType: LikeTarget.PRODUCT,
+            action: LikeAction.SAVE,
+        };
 
-		const modifier: number = await this.likeService.toggleLike(memberId, input);
-		const result = await this.productStatsEditor({ _id: saveRefId, targetKey: 'productLikes', modifier: modifier }); // Save ham likes ga
+        const modifier: number = await this.likeService.toggleLike(memberId, input);
+        const result = await this.productStatsEditor({ 
+            _id: saveRefId, 
+            targetKey: 'productSaves', 
+            modifier: modifier 
+        });
 
-		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result.toObject() as Product;
-	}
+        if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+        return result.toObject() as Product;
+    }
 
-    // Yangi: View method
-    public async viewProduct(memberId: ObjectId | null, viewRefId: ObjectId): Promise<Product> {
-		const target: any = await this.productModel.findOne({ _id: viewRefId, productStatus: ProductStatus.ACTIVE }).exec();
-		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
-		const input = { 
-			viewRefId, 
-			viewGroup: ViewGroup.PRODUCT 
-		};
-
-		const newView = await this.viewService.recordView({ ...input, memberId: memberId || null });
-		let modifier = 0;
-		if (newView) {
-			modifier = 1;
-			await this.productStatsEditor({ _id: viewRefId, targetKey: 'productViews', modifier });
-		}
-
-		const result = await this.productModel.findById(viewRefId).exec();
-		return result.toObject() as Product;
-	}
-
-	public async productStatsEditor(input: StatisticModifier): Promise<any> {
-		const { _id, targetKey, modifier } = input;
-		return await this.productModel
-			.findByIdAndUpdate(
-				_id,
-				{ $inc: { [targetKey]: modifier } },
-				{
-					new: true,
-				},
-			)
-			.exec();
-	}
+    public async productStatsEditor(input: StatisticModifier): Promise<any> {
+        const { _id, targetKey, modifier } = input;
+        return await this.productModel
+            .findByIdAndUpdate(
+                _id,
+                { $inc: { [targetKey]: modifier } },
+                { new: true }
+            )
+            .exec();
+    }
 }

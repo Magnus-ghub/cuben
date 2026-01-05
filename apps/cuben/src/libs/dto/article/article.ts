@@ -31,6 +31,9 @@ export class Article {
 	articleLikes: number;
 
 	@Field(() => Int)
+	articleSaves: number;
+
+	@Field(() => Int)
 	articleComments: number;
 
 	@Field(() => String)

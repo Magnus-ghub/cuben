@@ -45,6 +45,11 @@ const ProductSchema = new Schema(
 			default: 0,
 		},
 
+		productSaves: {
+			type: Number,
+			default: 0,
+		},
+
 		productCondition: {
 			type: String,
 			enum: ProductCondition,

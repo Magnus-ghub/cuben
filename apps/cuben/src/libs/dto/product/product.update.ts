@@ -44,7 +44,7 @@ productPrice?: number;
 productImages?: string[];
 
 @IsOptional()
-@Length(5,100)
+@Length(5,500)
 @Field(()=>String, {nullable: true})
 productDesc?: string;
 

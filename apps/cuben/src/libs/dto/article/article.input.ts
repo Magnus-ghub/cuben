@@ -1,11 +1,9 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
 import { IsIn, IsNotEmpty, IsOptional, Length, Min } from 'class-validator';
 import { ObjectId } from 'mongoose';
-import { Direction } from '../../enums/common.enum';
 import { ArticleCategory, ArticleStatus } from '../../enums/article.enum';
+import { Direction } from '../../enums/common.enum';
 import { availableArticleSorts } from '../../config';
-
-
 
 @InputType()
 export class ArticleInput {
@@ -31,7 +29,7 @@ export class ArticleInput {
 }
 
 @InputType()
-class AISearch {
+class ArticleSearch { 
 	@IsOptional()
 	@Field(() => ArticleCategory, { nullable: true })
 	articleCategory?: ArticleCategory;
@@ -58,7 +56,7 @@ export class ArticlesInquiry {
 	limit: number;
 
 	@IsOptional()
-	@IsIn(availableArticleSorts) 
+	@IsIn(availableArticleSorts)
 	@Field(() => String, { nullable: true })
 	sort?: string;
 
@@ -67,12 +65,12 @@ export class ArticlesInquiry {
 	direction?: Direction;
 
 	@IsNotEmpty()
-	@Field(() => AISearch)
-	search: AISearch;
+	@Field(() => ArticleSearch) 
+	search: ArticleSearch;
 }
 
 @InputType()
-class AAISearch {
+class AAISearch { 
 	@IsOptional()
 	@Field(() => ArticleStatus, { nullable: true })
 	articleStatus?: ArticleStatus;

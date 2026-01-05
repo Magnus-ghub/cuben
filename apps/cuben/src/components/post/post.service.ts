@@ -9,15 +9,12 @@ import { shapeIntoMongoObjectId } from '../../libs/config';
 import { LikeService } from '../like/like.service';
 import { MeLiked } from '../../libs/dto/like/like';
 import { CommentService } from '../comment/comment.service';
-import { CommentInput } from '../../libs/dto/comment/comment.input'; // CommentUpdate qo'shildi
 import { Post, Posts } from '../../libs/dto/post/post';
 import { PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
 import { PostUpdate } from '../../libs/dto/post/post.update';
 import { PostStatus } from '../../libs/enums/post.enum';
 import { LikeTarget, LikeAction } from '../../libs/enums/like.enum';
-import { CommentGroup, CommentStatus } from '../../libs/enums/comment.enum';
 import { LikeInput } from '../../libs/dto/like/like.input';
-import { CommentUpdate } from '../../libs/dto/comment/comment.update';
 
 @Injectable()
 export class PostService {
@@ -25,7 +22,6 @@ export class PostService {
 		@InjectModel('Post') private readonly postModel: Model<any>,
 		private memberService: MemberService,
 		private likeService: LikeService,
-		private commentService: CommentService,
 	) {}
 
 	public async createPost(input: PostInput): Promise<Post> {
@@ -36,7 +32,7 @@ export class PostService {
 				targetKey: 'memberPosts',
 				modifier: 1,
 			});
-			return result.toObject() as Post;
+			return result;
 		} catch (err) {
 			console.log('Error, Service.model:', err.message);
 			throw new BadRequestException(Message.CREATE_FAILED);
@@ -71,7 +67,7 @@ export class PostService {
 
 		targetPost.meLiked = meLiked;
 		targetPost.memberData = await this.memberService.getMember(null, targetPost.memberId);
-		return targetPost as Post;
+		return targetPost;
 	}
 
 	public async updatePost(memberId: ObjectId, input: PostUpdate): Promise<Post> {
@@ -96,7 +92,7 @@ export class PostService {
 			});
 		}
 
-		return result.toObject() as Post;
+		return result;
 	}
 
 	public async getPosts(memberId: ObjectId | null, input: PostsInquiry): Promise<Posts> {
@@ -201,7 +197,7 @@ export class PostService {
 			.exec();
 		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		return result[0] as Posts;
+		return result[0];
 	}
 
 	private shapeMatchQuery(match: T, input: PostsInquiry): void {
@@ -228,7 +224,7 @@ export class PostService {
 		const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier });
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result.toObject() as Post;
+		return result;
 	}
 
 	public async saveTargetPost(memberId: ObjectId, saveRefId: ObjectId): Promise<Post> {
@@ -245,44 +241,16 @@ export class PostService {
 		const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier });
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result.toObject() as Post;
+		return result;
 	}
 
-	public async addCommentToPost(memberId: ObjectId, postId: ObjectId, commentContent: string): Promise<Post> {
-		const target: any = await this.postModel.findOne({ _id: postId, postStatus: PostStatus.ACTIVE }).exec();
-		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-
-		const input: CommentInput = {
-			commentGroup: CommentGroup.POST,
-			commentRefId: postId,
-			commentContent: commentContent,
-		};
-
-		await this.commentService.createComment(memberId, input);
-
-		const result = await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: 1 });
-
-		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result.toObject() as Post;
+	// Yangi: Faqat counter update uchun (CommentService.createComment dan keyin chaqiriladi)
+	public async incrementPostComments(postId: ObjectId): Promise<Post> {
+		return await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: 1 });
 	}
 
-	public async deleteCommentFromPost(memberId: ObjectId, commentId: ObjectId): Promise<Post> {
-		const targetComment: any = await this.commentService.getCommentById(commentId);
-		if (!targetComment || targetComment.memberId.toString() !== memberId.toString() || targetComment.commentStatus === CommentStatus.DELETE) {
-			throw new BadRequestException('Comment not found or not authorized');
-		}
-
-		const updateInput: CommentUpdate = {
-			_id: commentId,
-			commentStatus: CommentStatus.DELETE,
-		};
-		await this.commentService.updateComment(memberId, updateInput); // Fix: updateComment ishlatildi
-
-		const postId = targetComment.commentRefId;
-		const result = await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: -1 });
-
-		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result.toObject() as Post;
+	public async decrementPostComments(postId: ObjectId): Promise<Post> {
+		return await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: -1 });
 	}
 
 	public async postStatsEditor(input: StatisticModifier): Promise<any> {

@@ -12,7 +12,7 @@ import { PostService } from './post.service';
 import { Post, Posts } from '../../libs/dto/post/post';
 import { PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
 import { PostUpdate } from '../../libs/dto/post/post.update';
-import { CommentInput } from '../../libs/dto/comment/comment.input'; // Comment uchun
+import { LikeAction, LikeTarget } from '../../libs/enums/like.enum';
 
 @Resolver()
 export class PostResolver {
@@ -34,7 +34,7 @@ export class PostResolver {
 	@Query(() => Post)
 	public async getPost(
         @Args('postId') input: string, 
-        @AuthMember('_id') memberId: ObjectId | null, // Null bo'lishi mumkin, unauth uchun
+        @AuthMember('_id') memberId: ObjectId | null,
     ): Promise<Post> {
 		console.log('Query: getPost');
 		const postId = shapeIntoMongoObjectId(input);
@@ -48,7 +48,7 @@ export class PostResolver {
         @Args('input') input: PostUpdate,
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<Post> {
-        console.log('Mutation: updatePost'); // Query emas, Mutation
+        console.log('Mutation: updatePost');
         input._id = shapeIntoMongoObjectId(input._id);
         return await this.postService.updatePost(memberId, input);
     }
@@ -63,7 +63,6 @@ export class PostResolver {
         return await this.postService.getPosts(memberId || null, input);
     }
 
-    // Like va Save ni yangiladim: LikeInput bilan
     @UseGuards(AuthGuard)
 	@Mutation(() => Post)
 	public async likeTargetPost(
@@ -86,29 +85,6 @@ export class PostResolver {
 		return await this.postService.saveTargetPost(memberId, saveRefId);
 	}
 
-    // Yangi: Comment qo'shish uchun mutation (post counter ni update qilish bilan)
-    @UseGuards(AuthGuard)
-	@Mutation(() => Post)
-	public async addCommentToPost(
-		@Args('postId') postId: string,
-        @Args('input') input: Partial<CommentInput>, // commentContent ni oladi, group va refId service da set qilinadi
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Post> {
-		console.log('Mutation: addCommentToPost');
-		const refId = shapeIntoMongoObjectId(postId);
-        const commentContent = input.commentContent; // Faqat content ni olamiz
-		return await this.postService.addCommentToPost(memberId, refId, commentContent);
-	}
-
-    // Yangi: Comment o'chirish uchun (status DELETE ga o'tkazib, counter -1)
-    @UseGuards(AuthGuard)
-	@Mutation(() => Post)
-	public async deleteCommentFromPost(
-		@Args('commentId') commentId: string,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Post> {
-		console.log('Mutation: deleteCommentFromPost');
-		const commentRefId = shapeIntoMongoObjectId(commentId); // Comment ID emas, post ID ni qaytarish uchun
-		return await this.postService.deleteCommentFromPost(memberId, commentRefId);
-	}
+    // Yangi: Comment qo'shish uchun alohida emas, CommentResolver da createComment chaqiriladi
+    // Bu yerda faqat post counter update qilish mumkin, lekin alohida mutation kerak emas
 }

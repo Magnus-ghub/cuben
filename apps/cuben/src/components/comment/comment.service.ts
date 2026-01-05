@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
-import { ArticleService } from '../article/article.service'; // Rename
+import { ArticleService } from '../article/article.service';
 import { MemberService } from '../member/member.service';
 import { CommentInput, CommentsInquiry } from '../../libs/dto/comment/comment.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
@@ -18,11 +18,8 @@ import { LikeService } from '../like/like.service';
 export class CommentService {
 	constructor(
 		@InjectModel('Comment') private readonly commentModel: Model<Comment>,
-		private readonly memberService: MemberService,
-		private readonly productService: ProductService,
-		private readonly articleService: ArticleService, // Rename
+		private readonly articleService: ArticleService,
         private readonly postService: PostService,
-        private readonly likeService: LikeService,
 	) {}
 
 	public async createComment(memberId: ObjectId, input: CommentInput): Promise<Comment> {
@@ -39,7 +36,7 @@ export class CommentService {
 		// Counter update
 		switch (input.commentGroup) {
 			case CommentGroup.ARTICLE:
-				await this.articleService.articleStatsEditor({ // Rename
+				await this.articleService.articleStatsEditor({
 					_id: input.commentRefId,
 					targetKey: 'articleComments',
 					modifier: 1,
@@ -55,7 +52,7 @@ export class CommentService {
 		}
 
 		if (!result) throw new InternalServerErrorException(Message.CREATE_FAILED);
-		return result.toObject() as Comment;
+		return result; // toObject removed
 	}
 
 	public async updateComment(memberId: ObjectId, input: CommentUpdate): Promise<Comment> {
@@ -83,7 +80,7 @@ export class CommentService {
 		if (newStatus === CommentStatus.DELETE && oldComment.commentStatus === CommentStatus.ACTIVE) {
 			switch (oldComment.commentGroup) {
 				case CommentGroup.ARTICLE:
-					await this.articleService.articleStatsEditor({ // Rename
+					await this.articleService.articleStatsEditor({
 						_id: oldComment.commentRefId,
 						targetKey: 'articleComments',
 						modifier: -1,
@@ -99,7 +96,7 @@ export class CommentService {
 			}
 		}
 
-		return result.toObject() as Comment;
+		return result; // toObject removed
 	}
 
 	public async getComments(memberId: ObjectId | null, input: CommentsInquiry): Promise<Comments> {
@@ -129,7 +126,7 @@ export class CommentService {
 			.exec();
 		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		return result[0] as Comments;
+		return result[0]; // as Comments removed (lean natija)
 	}
 
 	public async removeCommentByAdmin(input: ObjectId): Promise<Comment> {
@@ -149,7 +146,7 @@ export class CommentService {
 		// Counter -1
 		switch (targetComment.commentGroup) {
 			case CommentGroup.ARTICLE:
-				await this.articleService.articleStatsEditor({ // Rename
+				await this.articleService.articleStatsEditor({
 					_id: targetComment.commentRefId,
 					targetKey: 'articleComments',
 					modifier: -1,
@@ -164,7 +161,7 @@ export class CommentService {
 				break;
 		}
 
-		return result.toObject() as Comment;
+		return result; // toObject removed
 	}
 
 	public async getCommentById(commentId: ObjectId): Promise<Comment | null> {

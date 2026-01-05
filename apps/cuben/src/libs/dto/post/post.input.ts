@@ -24,7 +24,7 @@ export class PostInput {
 }
 
 @InputType()
-class POSISearch {
+class PostSearch { 
 	@IsOptional()
 	@Field(() => String, { nullable: true })
 	text?: string;
@@ -56,8 +56,8 @@ export class PostsInquiry {
 	direction?: Direction;
 
 	@IsNotEmpty()
-	@Field(() => POSISearch)
-	search: POSISearch;
+	@Field(() => PostSearch)
+	search: PostSearch;
 }
 
 @InputType()

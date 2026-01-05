@@ -214,7 +214,7 @@ export class ProductService {
     }
 
     // ❤️ MY FAVORITES
-    public async getFavorites(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
+    public async getLikedProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         console.log('📋 Getting Favorite Products (LIKED)...');
         return await this.likeService.getFavoriteProducts(memberId, input);
     }

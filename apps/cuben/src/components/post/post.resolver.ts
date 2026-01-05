@@ -21,10 +21,7 @@ export class PostResolver {
 	@Roles(MemberType.USER, MemberType.ADMIN)
 	@UseGuards(RolesGuard)
 	@Mutation(() => Post)
-	public async createPost(
-		@Args('input') input: PostInput,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Post> {
+	public async createPost(@Args('input') input: PostInput, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
 		console.log('Mutation: createPost');
 		input.memberId = memberId;
 		return await this.postService.createPost(input);
@@ -32,59 +29,68 @@ export class PostResolver {
 
 	@UseGuards(WithoutGuard)
 	@Query(() => Post)
-	public async getPost(
-        @Args('postId') input: string, 
-        @AuthMember('_id') memberId: ObjectId | null,
-    ): Promise<Post> {
+	public async getPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId | null): Promise<Post> {
 		console.log('Query: getPost');
 		const postId = shapeIntoMongoObjectId(input);
 		return await this.postService.getPost(memberId || null, postId);
 	}
 
-    @Roles(MemberType.USER, MemberType.ADMIN) 
-    @UseGuards(RolesGuard)
-    @Mutation(() => Post)
-    public async updatePost(
-        @Args('input') input: PostUpdate,
-        @AuthMember('_id') memberId: ObjectId,
-    ): Promise<Post> {
-        console.log('Mutation: updatePost');
-        input._id = shapeIntoMongoObjectId(input._id);
-        return await this.postService.updatePost(memberId, input);
-    }
-
-    @UseGuards(WithoutGuard)
-    @Query(() => Posts)
-    public async getPosts(
-        @Args('input') input: PostsInquiry,
-        @AuthMember('_id') memberId: ObjectId | null,
-    ): Promise<Posts> {
-        console.log('Query: getPosts');
-        return await this.postService.getPosts(memberId || null, input);
-    }
-
-    @UseGuards(AuthGuard)
+	@Roles(MemberType.USER, MemberType.ADMIN)
+	@UseGuards(RolesGuard)
 	@Mutation(() => Post)
-	public async likeTargetPost(
-		@Args('postId') input: string,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Post> {
+	public async updatePost(@Args('input') input: PostUpdate, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
+		console.log('Mutation: updatePost');
+		input._id = shapeIntoMongoObjectId(input._id);
+		return await this.postService.updatePost(memberId, input);
+	}
+
+	@UseGuards(WithoutGuard)
+	@Query(() => Posts)
+	public async getPosts(
+		@Args('input') input: PostsInquiry,
+		@AuthMember('_id') memberId: ObjectId | null,
+	): Promise<Posts> {
+		console.log('Query: getPosts');
+		return await this.postService.getPosts(memberId || null, input);
+	}
+
+	// ❤️ LIKE TOGGLE
+	@UseGuards(AuthGuard)
+	@Mutation(() => Post)
+	public async likeTargetPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
 		console.log('Mutation: likeTargetPost');
 		const likeRefId = shapeIntoMongoObjectId(input);
 		return await this.postService.likeTargetPost(memberId, likeRefId);
 	}
 
-    @UseGuards(AuthGuard)
+	// 💾 SAVE TOGGLE
+	@UseGuards(AuthGuard)
 	@Mutation(() => Post)
-	public async saveTargetPost(
-		@Args('postId') input: string,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Post> {
+	public async saveTargetPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
 		console.log('Mutation: saveTargetPost');
 		const saveRefId = shapeIntoMongoObjectId(input);
 		return await this.postService.saveTargetPost(memberId, saveRefId);
 	}
 
-    // Yangi: Comment qo'shish uchun alohida emas, CommentResolver da createComment chaqiriladi
-    // Bu yerda faqat post counter update qilish mumkin, lekin alohida mutation kerak emas
+	// ❤️ MY FAVORITES (LIKED products)
+	@UseGuards(AuthGuard)
+	@Query(() => Posts)
+	public async getLikedPosts(
+		@Args('input') input: PostsInquiry,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Posts> {
+		console.log('Query: getFavorites (LIKED posts)');
+		return await this.postService.getLikedPosts(memberId, input);
+	}
+
+	// 💾 SAVED ITEMS (SAVED posts)
+	@UseGuards(AuthGuard)
+	@Query(() => Posts)
+	public async getSavedPosts(
+		@Args('input') input: PostsInquiry,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Posts> {
+		console.log('Query: getSavedItems (SAVED posts)');
+		return await this.postService.getSavedPosts(memberId, input);
+	}
 }

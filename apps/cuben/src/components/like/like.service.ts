@@ -8,6 +8,8 @@ import { T } from '../../libs/types/common';
 import { Message } from '../../libs/enums/common.enum';
 import { OrdinaryInquiry } from '../../libs/dto/product/product.input';
 import { Products } from '../../libs/dto/product/product';
+import { PostsInquiry } from '../../libs/dto/post/post.input';
+import { Posts } from '../../libs/dto/post/post';
 
 @Injectable()
 export class LikeService {
@@ -108,7 +110,7 @@ export class LikeService {
         return result;
     }
 
-    // ❤️ MY FAVORITES - LIKE action bilan
+    // ❤️ MY FAVORITES - LIKE action 
     public async getFavoriteProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         const { page, limit } = input;
         
@@ -206,7 +208,7 @@ export class LikeService {
         return result;
     }
 
-    // 💾 SAVED ITEMS - SAVE action bilan
+    // 💾 SAVED ITEMS - SAVE action 
     public async getSavedProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         const { page, limit } = input;
         
@@ -299,6 +301,202 @@ export class LikeService {
         };
         
         result.list = data[0]?.list.map((ele) => ele.savedProduct) || [];
+        
+        console.log('💾 Saved Items:', result.list.length);
+        return result;
+    }
+
+    // ❤️ MY FAVORITES - LIKE action 
+    public async getFavoritePosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
+        const { page, limit } = input;
+        
+        const match: T = { 
+            targetType: LikeTarget.POST, 
+            action: LikeAction.LIKE,
+            memberId 
+        };
+
+        const data: T = await this.likeModel
+            .aggregate([
+                { $match: match },
+                { $sort: { createdAt: -1 } },
+                {
+                    $lookup: {
+                        from: 'posts',
+                        localField: 'refId',
+                        foreignField: '_id',
+                        as: 'favoritePost',
+                    },
+                },
+                { $unwind: '$favoritePost' },
+                {
+                    $match: {
+                        'favoritePost.postStatus': 'ACTIVE'
+                    }
+                },
+                {
+                    $facet: {
+                        list: [
+                            { $skip: (page - 1) * limit },
+                            { $limit: limit },
+                            // Member lookup
+                            {
+                                $lookup: {
+                                    from: 'members',
+                                    localField: 'favoritePost.memberId',
+                                    foreignField: '_id',
+                                    as: 'favoritePost.memberData',
+                                },
+                            },
+                            { 
+                                $unwind: { 
+                                    path: '$favoritePost.memberData', 
+                                    preserveNullAndEmptyArrays: true 
+                                } 
+                            },
+                            // SAVE status lookup (ikkala holatni ham tekshirish)
+                            {
+                                $lookup: {
+                                    from: 'likes',
+                                    let: { productId: '$favoritePost._id' },
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $expr: {
+                                                    $and: [
+                                                        { $eq: ['$memberId', memberId] },
+                                                        { $eq: ['$refId', '$$postId'] },
+                                                        { $eq: ['$targetType', LikeTarget.POST] },
+                                                        { $eq: ['$action', LikeAction.SAVE] },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    as: 'saveStatus',
+                                },
+                            },
+                            // MeLiked qo'shish
+                            {
+                                $addFields: {
+                                    'favoritePost.meLiked': {
+                                        liked: true,  
+                                        saved: { $gt: [{ $size: '$saveStatus' }, 0] }  
+                                    }
+                                }
+                            },
+                            { $project: { saveStatus: 0 } } 
+                        ],
+                        metaCounter: [{ $count: 'total' }],
+                    },
+                },
+            ])
+            .exec();
+
+        const result: Posts = { 
+            list: [], 
+            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
+        };
+        
+        result.list = data[0]?.list.map((ele) => ele.favoritePost) || [];
+        
+        console.log('✅ Favorites:', result.list.length);
+        return result;
+    }
+
+    // 💾 SAVED ITEMS - SAVE action 
+    public async getSavedPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
+        const { page, limit } = input;
+        
+        const match: T = { 
+            targetType: LikeTarget.POST, 
+            action: LikeAction.SAVE,
+            memberId 
+        };
+
+        const data: T = await this.likeModel
+            .aggregate([
+                { $match: match },
+                { $sort: { createdAt: -1 } },
+                {
+                    $lookup: {
+                        from: 'posts',
+                        localField: 'refId',
+                        foreignField: '_id',
+                        as: 'savedPost',
+                    },
+                },
+                { $unwind: '$savedPost' },
+                {
+                    $match: {
+                        'savedPost.postStatus': 'ACTIVE'
+                    }
+                },
+                {
+                    $facet: {
+                        list: [
+                            { $skip: (page - 1) * limit },
+                            { $limit: limit },
+                            // Member lookup
+                            {
+                                $lookup: {
+                                    from: 'members',
+                                    localField: 'savedPost.memberId',
+                                    foreignField: '_id',
+                                    as: 'savedPost.memberData',
+                                },
+                            },
+                            { 
+                                $unwind: { 
+                                    path: '$savedPost.memberData', 
+                                    preserveNullAndEmptyArrays: true 
+                                } 
+                            },
+                            // LIKE status lookup (ikkala holatni ham tekshirish)
+                            {
+                                $lookup: {
+                                    from: 'likes',
+                                    let: { productId: '$savedPost._id' },
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $expr: {
+                                                    $and: [
+                                                        { $eq: ['$memberId', memberId] },
+                                                        { $eq: ['$refId', '$$postId'] },
+                                                        { $eq: ['$targetType', LikeTarget.POST] },
+                                                        { $eq: ['$action', LikeAction.LIKE] },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    as: 'likeStatus',
+                                },
+                            },
+                            // MeLiked qo'shish
+                            {
+                                $addFields: {
+                                    'savedPost.meLiked': {
+                                        liked: { $gt: [{ $size: '$likeStatus' }, 0] }, 
+                                        saved: true    
+                                    }
+                                }
+                            },
+                            { $project: { likeStatus: 0 } }  
+                        ],
+                        metaCounter: [{ $count: 'total' }],
+                    },
+                },
+            ])
+            .exec();
+
+        const result: Posts = { 
+            list: [], 
+            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
+        };
+        
+        result.list = data[0]?.list.map((ele) => ele.savedPost) || [];
         
         console.log('💾 Saved Items:', result.list.length);
         return result;

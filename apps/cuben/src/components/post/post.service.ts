@@ -114,28 +114,28 @@ export class PostService {
 							{
 								$lookup: {
 									from: 'likes',
-									let: { 
-										userId: memberId, 
-										postId: '$_id'    
+									let: {
+										userId: memberId,
+										postId: '$_id',
 									},
 									pipeline: [
 										{
 											$match: {
 												$expr: {
 													$and: [
-														{ $eq: ['$memberId', '$$userId'] },  
-														{ $eq: ['$refId', '$$postId'] }, 
+														{ $eq: ['$memberId', '$$userId'] },
+														{ $eq: ['$refId', '$$postId'] },
 														{ $eq: ['$targetType', LikeTarget.POST] },
 														{ $eq: ['$action', LikeAction.LIKE] },
 													],
 												},
 											},
 										},
-										{ 
-											$project: { 
-												memberId: 1, 
-												refId: 1, 
-											} 
+										{
+											$project: {
+												memberId: 1,
+												refId: 1,
+											},
 										},
 									],
 									as: 'tempLiked',
@@ -144,28 +144,28 @@ export class PostService {
 							{
 								$lookup: {
 									from: 'likes',
-									let: { 
-										userId: memberId, 
-										postId: '$_id'    
+									let: {
+										userId: memberId,
+										postId: '$_id',
 									},
 									pipeline: [
 										{
 											$match: {
 												$expr: {
 													$and: [
-														{ $eq: ['$memberId', '$$userId'] },  
-														{ $eq: ['$refId', '$$postId'] }, 
+														{ $eq: ['$memberId', '$$userId'] },
+														{ $eq: ['$refId', '$$postId'] },
 														{ $eq: ['$targetType', LikeTarget.POST] },
 														{ $eq: ['$action', LikeAction.SAVE] },
 													],
 												},
 											},
 										},
-										{ 
-											$project: { 
-												memberId: 1, 
-												refId: 1, 
-											} 
+										{
+											$project: {
+												memberId: 1,
+												refId: 1,
+											},
 										},
 									],
 									as: 'tempSaved',
@@ -174,10 +174,10 @@ export class PostService {
 							{
 								$addFields: {
 									meLiked: {
-										liked: { $gt: [ { $size: '$tempLiked' }, 0 ] },
-										saved: { $gt: [ { $size: '$tempSaved' }, 0 ] }
-									}
-								}
+										liked: { $gt: [{ $size: '$tempLiked' }, 0] },
+										saved: { $gt: [{ $size: '$tempSaved' }, 0] },
+									},
+								},
 							},
 							{ $project: { tempLiked: 0, tempSaved: 0 } },
 							{
@@ -200,14 +200,27 @@ export class PostService {
 		return result[0];
 	}
 
+	// ❤️ MY FAVORITES
+	public async getLikedPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
+		console.log('📋 Getting Favorite Posts (LIKED)...');
+		return await this.likeService.getFavoritePosts(memberId, input);
+	}
+
+	// 💾 SAVED ITEMS
+	public async getSavedPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
+		console.log('📋 Getting Saved Products...');
+		return await this.likeService.getSavedPosts(memberId, input);
+	}
+
 	private shapeMatchQuery(match: T, input: PostsInquiry): void {
 		const { memberId, text } = input.search;
 		if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
 
-		if (text) match.$or = [
-			{ postTitle: { $regex: new RegExp(text, 'i') } },
-			{ postContent: { $regex: new RegExp(text, 'i') } }
-		];
+		if (text)
+			match.$or = [
+				{ postTitle: { $regex: new RegExp(text, 'i') } },
+				{ postContent: { $regex: new RegExp(text, 'i') } },
+			];
 	}
 
 	public async likeTargetPost(memberId: ObjectId, likeRefId: ObjectId): Promise<Post> {
@@ -221,10 +234,14 @@ export class PostService {
 		};
 
 		const modifier: number = await this.likeService.toggleLike(memberId, input);
-		const result = await this.postStatsEditor({ _id: likeRefId, targetKey: 'postLikes', modifier });
+		const result = await this.postStatsEditor({
+			_id: likeRefId,
+			targetKey: 'postLikes',
+			modifier: modifier,
+		});
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result;
+		return result.toObject() as Post;
 	}
 
 	public async saveTargetPost(memberId: ObjectId, saveRefId: ObjectId): Promise<Post> {
@@ -238,10 +255,14 @@ export class PostService {
 		};
 
 		const modifier: number = await this.likeService.toggleLike(memberId, input);
-		const result = await this.postStatsEditor({ _id: saveRefId, targetKey: 'postSaves', modifier });
+		const result = await this.postStatsEditor({
+			_id: saveRefId,
+			targetKey: 'postSaves',
+			modifier: modifier,
+		});
 
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-		return result;
+		return result.toObject() as Post;
 	}
 
 	// Yangi: Faqat counter update uchun (CommentService.createComment dan keyin chaqiriladi)
@@ -255,12 +276,6 @@ export class PostService {
 
 	public async postStatsEditor(input: StatisticModifier): Promise<any> {
 		const { _id, targetKey, modifier } = input;
-		return await this.postModel
-			.findByIdAndUpdate(
-				_id,
-				{ $inc: { [targetKey]: modifier } },
-				{ new: true },
-			)
-			.exec();
+		return await this.postModel.findByIdAndUpdate(_id, { $inc: { [targetKey]: modifier } }, { new: true }).exec();
 	}
 }

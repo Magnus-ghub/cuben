@@ -95,12 +95,12 @@ export class ProductResolver {
     // ❤️ MY FAVORITES (LIKED products)
     @UseGuards(AuthGuard)
     @Query(() => Products)
-    public async getFavorites(
+    public async getLikedProducts(
         @Args('input') input: OrdinaryInquiry,
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<Products> {
         console.log('Query: getFavorites (LIKED products)');
-        return await this.productService.getFavorites(memberId, input);
+        return await this.productService.getLikedProducts(memberId, input);
     }
 
     // 💾 SAVED ITEMS (SAVED products)

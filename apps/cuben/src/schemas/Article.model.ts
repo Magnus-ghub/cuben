@@ -55,7 +55,7 @@ const ArticleSchema = new Schema(
 			ref: 'Member',
 		},
 	},
-	{ timestamps: true, collection: 'Articles' },
+	{ timestamps: true, collection: 'articles' },
 );
 
 export default ArticleSchema;

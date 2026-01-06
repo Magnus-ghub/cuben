@@ -24,13 +24,13 @@ export class ArticleResolver {
 		@AuthMember('_id') memberId: ObjectId,
 	): Promise<Article> {
 		console.log('Mutation: createArticle');
-		return await this.articleService.createArticle(memberId, input)
+		return await this.articleService.createArticle(memberId, input);
 	}
 
 	@UseGuards(WithoutGuard)
 	@Query(() => Article)
 	public async getArticle(
-		@Args('articleId') input: string, 
+		@Args('articleId') input: string,
 		@AuthMember('_id') memberId: ObjectId | null,
 	): Promise<Article> {
 		console.log('Query: getArticle');
@@ -52,11 +52,11 @@ export class ArticleResolver {
 	@UseGuards(WithoutGuard)
 	@Query(() => Articles)
 	public async getArticles(
-		@Args('input') input: ArticlesInquiry, 
+		@Args('input') input: ArticlesInquiry,
 		@AuthMember('_id') memberId: ObjectId | null,
 	): Promise<Articles> {
 		console.log('Query: getArticles');
-		return await this.articleService.getArticles(memberId || null, input)
+		return await this.articleService.getArticles(memberId || null, input);
 	}
 
 	@UseGuards(AuthGuard)
@@ -93,7 +93,7 @@ export class ArticleResolver {
 	}
 
 	/** ADMIN **/
-	@Roles(MemberType.ADMIN) 
+	@Roles(MemberType.ADMIN)
 	@UseGuards(RolesGuard)
 	@Query(() => Articles)
 	public async getAllArticlesByAdmin(
@@ -103,8 +103,8 @@ export class ArticleResolver {
 		console.log('Query: getAllArticlesByAdmin');
 		return await this.articleService.getAllArticlesByAdmin(input);
 	}
-    
-	@Roles(MemberType.ADMIN)  
+
+	@Roles(MemberType.ADMIN)
 	@UseGuards(RolesGuard)
 	@Mutation(() => Article)
 	public async updateArticleByAdmin(
@@ -115,8 +115,8 @@ export class ArticleResolver {
 		input._id = shapeIntoMongoObjectId(input._id);
 		return await this.articleService.updateArticleByAdmin(input);
 	}
-    
-	@Roles(MemberType.ADMIN)  
+
+	@Roles(MemberType.ADMIN)
 	@UseGuards(RolesGuard)
 	@Mutation(() => Article)
 	public async removeArticleByAdmin(
@@ -126,5 +126,27 @@ export class ArticleResolver {
 		console.log('Mutation: removeArticleByAdmin');
 		const articleId = shapeIntoMongoObjectId(input);
 		return await this.articleService.removeArticleByAdmin(articleId);
+	}
+
+	// ❤️ MY FAVORITES (LIKED articles)
+	@UseGuards(AuthGuard)
+	@Query(() => Articles)
+	public async getLikedArticles(
+		@Args('input') input: AllArticlesInquiry,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Articles> {
+		console.log('Query: getFavorites (LIKED articles)');
+		return await this.articleService.getLikedArticles(memberId, input);
+	}
+
+	// 💾 SAVED ITEMS (SAVED articles)
+	@UseGuards(AuthGuard)
+	@Query(() => Articles)
+	public async getSavedArticles(
+		@Args('input') input: AllArticlesInquiry,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Articles> {
+		console.log('Query: getSavedItems (SAVED articles)');
+		return await this.articleService.getSavedArticles(memberId, input);
 	}
 }

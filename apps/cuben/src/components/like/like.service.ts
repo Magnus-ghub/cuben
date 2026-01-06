@@ -10,6 +10,8 @@ import { OrdinaryInquiry } from '../../libs/dto/product/product.input';
 import { Products } from '../../libs/dto/product/product';
 import { PostsInquiry } from '../../libs/dto/post/post.input';
 import { Posts } from '../../libs/dto/post/post';
+import { AllArticlesInquiry } from '../../libs/dto/article/article.input';
+import { Articles } from '../../libs/dto/article/article';
 
 @Injectable()
 export class LikeService {
@@ -358,7 +360,7 @@ export class LikeService {
                             {
                                 $lookup: {
                                     from: 'likes',
-                                    let: { productId: '$favoritePost._id' },
+                                    let: { postId: '$favoritePost._id' },
                                     pipeline: [
                                         {
                                             $match: {
@@ -456,7 +458,7 @@ export class LikeService {
                             {
                                 $lookup: {
                                     from: 'likes',
-                                    let: { productId: '$savedPost._id' },
+                                    let: { postId: '$savedPost._id' },
                                     pipeline: [
                                         {
                                             $match: {
@@ -497,6 +499,202 @@ export class LikeService {
         };
         
         result.list = data[0]?.list.map((ele) => ele.savedPost) || [];
+        
+        console.log('💾 Saved Items:', result.list.length);
+        return result;
+    }
+
+    // ❤️ MY FAVORITES - LIKE action 
+    public async getFavoriteArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
+        const { page, limit } = input;
+        
+        const match: T = { 
+            targetType: LikeTarget.ARTICLE, 
+            action: LikeAction.LIKE,
+            memberId 
+        };
+
+        const data: T = await this.likeModel
+            .aggregate([
+                { $match: match },
+                { $sort: { createdAt: -1 } },
+                {
+                    $lookup: {
+                        from: 'articles',
+                        localField: 'refId',
+                        foreignField: '_id',
+                        as: 'favoriteArticle',
+                    },
+                },
+                { $unwind: '$favoriteArticle' },
+                {
+                    $match: {
+                        'favoriteArticle.articleStatus': 'ACTIVE'
+                    }
+                },
+                {
+                    $facet: {
+                        list: [
+                            { $skip: (page - 1) * limit },
+                            { $limit: limit },
+                            // Member lookup
+                            {
+                                $lookup: {
+                                    from: 'members',
+                                    localField: 'favoriteArticle.memberId',
+                                    foreignField: '_id',
+                                    as: 'favoriteArticle.memberData',
+                                },
+                            },
+                            { 
+                                $unwind: { 
+                                    path: '$favoriteArticle.memberData', 
+                                    preserveNullAndEmptyArrays: true 
+                                } 
+                            },
+                            // SAVE status lookup (ikkala holatni ham tekshirish)
+                            {
+                                $lookup: {
+                                    from: 'likes',
+                                    let: { articleId: '$favoriteArticle._id' },
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $expr: {
+                                                    $and: [
+                                                        { $eq: ['$memberId', memberId] },
+                                                        { $eq: ['$refId', '$$articleId'] },
+                                                        { $eq: ['$targetType', LikeTarget.ARTICLE] },
+                                                        { $eq: ['$action', LikeAction.SAVE] },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    as: 'saveStatus',
+                                },
+                            },
+                            // MeLiked qo'shish
+                            {
+                                $addFields: {
+                                    'favoriteArticle.meLiked': {
+                                        liked: true,  
+                                        saved: { $gt: [{ $size: '$saveStatus' }, 0] }  
+                                    }
+                                }
+                            },
+                            { $project: { saveStatus: 0 } } 
+                        ],
+                        metaCounter: [{ $count: 'total' }],
+                    },
+                },
+            ])
+            .exec();
+
+        const result: Articles = { 
+            list: [], 
+            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
+        };
+        
+        result.list = data[0]?.list.map((ele) => ele.favoriteArticle) || [];
+        
+        console.log('✅ Favorites:', result.list.length);
+        return result;
+    }
+
+    // 💾 SAVED ITEMS - SAVE action 
+    public async getSavedArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
+        const { page, limit } = input;
+        
+        const match: T = { 
+            targetType: LikeTarget.ARTICLE, 
+            action: LikeAction.SAVE,
+            memberId 
+        };
+
+        const data: T = await this.likeModel
+            .aggregate([
+                { $match: match },
+                { $sort: { createdAt: -1 } },
+                {
+                    $lookup: {
+                        from: 'articles',
+                        localField: 'refId',
+                        foreignField: '_id',
+                        as: 'savedArticle',
+                    },
+                },
+                { $unwind: '$savedArticle' },
+                {
+                    $match: {
+                        'savedArticle.articleStatus': 'ACTIVE'
+                    }
+                },
+                {
+                    $facet: {
+                        list: [
+                            { $skip: (page - 1) * limit },
+                            { $limit: limit },
+                            // Member lookup
+                            {
+                                $lookup: {
+                                    from: 'members',
+                                    localField: 'savedArticle.memberId',
+                                    foreignField: '_id',
+                                    as: 'savedArticle.memberData',
+                                },
+                            },
+                            { 
+                                $unwind: { 
+                                    path: '$savedArticle.memberData', 
+                                    preserveNullAndEmptyArrays: true 
+                                } 
+                            },
+                            // LIKE status lookup (ikkala holatni ham tekshirish)
+                            {
+                                $lookup: {
+                                    from: 'likes',
+                                    let: { articleId: '$savedArticle._id' },
+                                    pipeline: [
+                                        {
+                                            $match: {
+                                                $expr: {
+                                                    $and: [
+                                                        { $eq: ['$memberId', memberId] },
+                                                        { $eq: ['$refId', '$$articleId'] },
+                                                        { $eq: ['$targetType', LikeTarget.ARTICLE] },
+                                                        { $eq: ['$action', LikeAction.LIKE] },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    as: 'likeStatus',
+                                },
+                            },
+                            // MeLiked qo'shish
+                            {
+                                $addFields: {
+                                    'savedArticle.meLiked': {
+                                        liked: { $gt: [{ $size: '$likeStatus' }, 0] }, 
+                                        saved: true    
+                                    }
+                                }
+                            },
+                            { $project: { likeStatus: 0 } }  
+                        ],
+                        metaCounter: [{ $count: 'total' }],
+                    },
+                },
+            ])
+            .exec();
+
+        const result: Articles = { 
+            list: [], 
+            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
+        };
+        
+        result.list = data[0]?.list.map((ele) => ele.savedArticle) || [];
         
         console.log('💾 Saved Items:', result.list.length);
         return result;

@@ -97,22 +97,22 @@ export class ArticleService {
 
 	public async updateArticle(memberId: ObjectId, input: ArticleUpdate): Promise<Article> {
 		const { _id, articleStatus } = input;
-		  
+
 		const result = await this.articleModel
-			.findOneAndUpdate({ _id: _id, memberId: memberId, articleStatus: ArticleStatus.ACTIVE}, input,  {
-				new: true, 
+			.findOneAndUpdate({ _id: _id, memberId: memberId, articleStatus: ArticleStatus.ACTIVE }, input, {
+				new: true,
 			})
 			.exec();
 
-			if(!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-			
-			if(articleStatus === ArticleStatus.DELETE) {
-				await this.memberService.memberStatsEditor({
-					_id: memberId,
-					targetKey: 'memberArticles',
-					modifier: -1,
-				});
-			}
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+
+		if (articleStatus === ArticleStatus.DELETE) {
+			await this.memberService.memberStatsEditor({
+				_id: memberId,
+				targetKey: 'memberArticles',
+				modifier: -1,
+			});
+		}
 
 		return result;
 	}
@@ -121,12 +121,13 @@ export class ArticleService {
 		const { articleCategory, text } = input.search;
 		const match: T = { articleStatus: ArticleStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-	
+
 		if (articleCategory) match.articleCategory = articleCategory;
-		if (text) match.$or = [
-			{ articleTitle: { $regex: new RegExp(text, 'i') } },
-			{ articleContent: { $regex: new RegExp(text, 'i') } }
-		];
+		if (text)
+			match.$or = [
+				{ articleTitle: { $regex: new RegExp(text, 'i') } },
+				{ articleContent: { $regex: new RegExp(text, 'i') } },
+			];
 		if (input.search?.memberId) {
 			match.memberId = shapeIntoMongoObjectId(input.search.memberId);
 		}
@@ -189,9 +190,9 @@ export class ArticleService {
 								$addFields: {
 									meLiked: {
 										liked: { $gt: [{ $size: '$tempLiked' }, 0] },
-										saved: { $gt: [{ $size: '$tempSaved' }, 0] }
-									}
-								}
+										saved: { $gt: [{ $size: '$tempSaved' }, 0] },
+									},
+								},
 							},
 							{ $project: { tempLiked: 0, tempSaved: 0 } },
 							{
@@ -209,41 +210,41 @@ export class ArticleService {
 				},
 			])
 			.exec();
-		if(!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-			
+		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
 		return result[0];
 	}
 
 	public async likeTargetArticle(memberId: ObjectId, likeRefId: ObjectId): Promise<Article> {
-		const target: any = await this.articleModel.findOne({_id: likeRefId, articleStatus: ArticleStatus.ACTIVE}).exec();
-		if(!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-	
+		const target: any = await this.articleModel.findOne({ _id: likeRefId, articleStatus: ArticleStatus.ACTIVE }).exec();
+		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
 		const input: LikeInput = {
 			refId: likeRefId,
 			targetType: LikeTarget.ARTICLE,
 			action: LikeAction.LIKE,
 		};
-	
+
 		const modifier: number = await this.likeService.toggleLike(memberId, input);
-		const result = await this.articleStatsEditor({_id: likeRefId, targetKey: 'articleLikes', modifier: modifier});
-	
+		const result = await this.articleStatsEditor({ _id: likeRefId, targetKey: 'articleLikes', modifier: modifier });
+
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
 		return result;
 	}
 
 	public async saveTargetArticle(memberId: ObjectId, saveRefId: ObjectId): Promise<Article> {
-		const target: any = await this.articleModel.findOne({_id: saveRefId, articleStatus: ArticleStatus.ACTIVE}).exec();
-		if(!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-	
+		const target: any = await this.articleModel.findOne({ _id: saveRefId, articleStatus: ArticleStatus.ACTIVE }).exec();
+		if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
 		const input: LikeInput = {
 			refId: saveRefId,
 			targetType: LikeTarget.ARTICLE,
 			action: LikeAction.SAVE,
 		};
-	
+
 		const modifier: number = await this.likeService.toggleLike(memberId, input);
-		const result = await this.articleStatsEditor({_id: saveRefId, targetKey: 'articleLikes', modifier: modifier}); // Agar alohida save key kerak bo'lsa, o'zgartiring
-	
+		const result = await this.articleStatsEditor({ _id: saveRefId, targetKey: 'articleLikes', modifier: modifier }); // Agar alohida save key kerak bo'lsa, o'zgartiring
+
 		if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
 		return result;
 	}
@@ -268,6 +269,18 @@ export class ArticleService {
 		return result;
 	}
 
+	// ❤️ MY FAVORITES
+	public async getLikedArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
+		console.log('📋 Getting Favorite articles (LIKED)...');
+		return await this.likeService.getFavoriteArticles(memberId, input);
+	}
+
+	// 💾 SAVED ITEMS
+	public async getSavedArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
+		console.log('📋 Getting Saved articles...');
+		return await this.likeService.getSavedArticles(memberId, input);
+	}
+
 	// Yangi: Faqat counter update uchun (CommentService.createComment dan keyin chaqiriladi)
 	public async incrementArticleComments(articleId: ObjectId): Promise<Article> {
 		return await this.articleStatsEditor({ _id: articleId, targetKey: 'articleComments', modifier: 1 });
@@ -281,10 +294,10 @@ export class ArticleService {
 		const { articleStatus, articleCategory } = input.search;
 		const match: T = {};
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
-	
+
 		if (articleStatus) match.articleStatus = articleStatus;
 		if (articleCategory) match.articleCategory = articleCategory;
-	
+
 		const result = await this.articleModel
 			.aggregate([
 				{ $match: match },
@@ -298,9 +311,9 @@ export class ArticleService {
 								$addFields: {
 									meLiked: {
 										liked: false,
-										saved: false
-									}
-								}
+										saved: false,
+									},
+								},
 							},
 							{
 								$lookup: {
@@ -317,37 +330,39 @@ export class ArticleService {
 				},
 			])
 			.exec();
-		if(!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-			
+		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+
 		return result[0];
-	} 
-	
+	}
+
 	public async updateArticleByAdmin(input: ArticleUpdate): Promise<Article> {
 		const { _id, articleStatus } = input;
-		
+
 		const result = await this.articleModel
-			.findOneAndUpdate( {_id: _id, articleStatus: ArticleStatus.ACTIVE}, input, { 
-				new: true, 
+			.findOneAndUpdate({ _id: _id, articleStatus: ArticleStatus.ACTIVE }, input, {
+				new: true,
 			})
 			.exec();
-		if(!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-			
-		if(articleStatus ===  ArticleStatus.DELETE) {
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+
+		if (articleStatus === ArticleStatus.DELETE) {
 			await this.memberService.memberStatsEditor({
 				_id: result.memberId,
 				targetKey: 'memberArticles',
 				modifier: -1,
 			});
 		}
-	
+
 		return result;
 	}
-	
+
 	public async removeArticleByAdmin(articleId: ObjectId): Promise<Article> {
 		const search: T = { _id: articleId, articleStatus: ArticleStatus.DELETE };
-		const result = await this.articleModel.findOneAndUpdate(search, { articleStatus: ArticleStatus.DELETE }, { new: true }).exec();
+		const result = await this.articleModel
+			.findOneAndUpdate(search, { articleStatus: ArticleStatus.DELETE }, { new: true })
+			.exec();
 		if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
-			
+
 		return result;
 	}
 
@@ -356,11 +371,11 @@ export class ArticleService {
 		return await this.articleModel
 			.findByIdAndUpdate(
 				_id,
-				{ $inc: { [targetKey]:  modifier } },
+				{ $inc: { [targetKey]: modifier } },
 				{
 					new: true,
 				},
 			)
-			.exec()
+			.exec();
 	}
 }

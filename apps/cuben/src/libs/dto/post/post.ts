@@ -41,11 +41,11 @@ export class Post {
 	updatedAt: Date;
 
 	/** from aggregation **/
-	@Field(() => [MeLiked], { nullable: true })
-	meLiked?: MeLiked[]; 
+	@Field(() => MeLiked, { nullable: true })
+	meLiked?: MeLiked; 
 
-	@Field(() => [MeLiked], { nullable: true })
-	meSaved?: MeLiked[]; 
+	@Field(() => MeLiked, { nullable: true })
+	meSaved?: MeLiked; 
 	
 	@Field(() => Member, { nullable: true })
 	memberData?: Member;
@@ -56,6 +56,6 @@ export class Posts {
 	@Field(() => [Post])
 	list: Post[];
 
-	@Field(() => [TotalCounter], { nullable: true })
-	metaCounter: TotalCounter[];
+	@Field(() => TotalCounter, { nullable: true })
+	metaCounter: TotalCounter;
 }

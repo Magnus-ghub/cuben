@@ -56,6 +56,6 @@ export class Posts {
 	@Field(() => [Post])
 	list: Post[];
 
-	@Field(() => TotalCounter, { nullable: true })
+	@Field(() => [TotalCounter], { nullable: true })
 	metaCounter: TotalCounter;
 }

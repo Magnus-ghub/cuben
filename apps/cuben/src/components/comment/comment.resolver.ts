@@ -39,7 +39,6 @@ export class CommentResolver {
         return await this.commentService.updateComment(memberId, input);
     }
 
-    // Yangi: User o'z commentini o'chirish uchun (status DELETE ga o'tkazish)
     @UseGuards(AuthGuard)
     @Mutation(() => Comment)
     public async deleteComment(
@@ -59,7 +58,7 @@ export class CommentResolver {
     @Query(() => Comments)
     public async getComments(
         @Args('input') input: CommentsInquiry, 
-        @AuthMember('_id') memberId: ObjectId | null, // Nullable
+        @AuthMember('_id') memberId: ObjectId | null, 
     ): Promise<Comments> {
         console.log('Query: getComments');
         input.search.commentRefId = shapeIntoMongoObjectId(input.search.commentRefId);
@@ -71,10 +70,10 @@ export class CommentResolver {
     @UseGuards(RolesGuard)
     @Mutation(() => Comment)
     public async removeCommentByAdmin(
-        @Args('commentId') input: string // commentId nomi to'g'rilandi
+        @Args('commentId') input: string 
     ): Promise<Comment> {
         console.log('Mutation: removeCommentByAdmin');
-        const commentId = shapeIntoMongoObjectId(input); // articleId → commentId
+        const commentId = shapeIntoMongoObjectId(input);
         return await this.commentService.removeCommentByAdmin(commentId);
     }
 }

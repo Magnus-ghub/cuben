@@ -58,6 +58,6 @@ export class Articles {
 	@Field(() => [Article])
 	list: Article[];
 
-	@Field(() => TotalCounter, { nullable: true }) 
+	@Field(() => [TotalCounter], { nullable: true }) 
 	metaCounter: TotalCounter;
 }

@@ -76,6 +76,6 @@ export class Products {
     @Field(() => [Product])
     list: Product[];
 
-    @Field(() => TotalCounter, { nullable: true }) 
+    @Field(() => [TotalCounter], { nullable: true })
     metaCounter: TotalCounter;
 }

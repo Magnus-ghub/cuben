@@ -125,12 +125,57 @@ export const lookupFollowerData = {
 	},
 };
 
-export const lookupFavorite = {
+export const lookupFavoriteProduct = {
 	$lookup: {
 		from: 'members',
 		localField: 'favoriteProduct.memberId',
 		foreignField: '_id',
 		as: 'favoriteProduct.memberData',
+	},
+};
+
+export const lookupFavoriteArticle = {
+	$lookup: {
+		from: 'members',
+		localField: 'favoriteArticle.memberId',
+		foreignField: '_id',
+		as: 'favoriteArticle.memberData',
+	},
+};
+
+export const lookupFavoritePost = {
+	$lookup: {
+		from: 'members',
+		localField: 'favoritePost.memberId',
+		foreignField: '_id',
+		as: 'favoritePost.memberData',
+	},
+};
+
+export const lookupSavedProduct = {
+	$lookup: {
+		from: 'members',
+		localField: 'savedProduct.memberId',
+		foreignField: '_id',
+		as: 'savedProduct.memberData',
+	},
+};
+
+export const lookupSavedArticle = {
+	$lookup: {
+		from: 'members',
+		localField: 'savedArticle.memberId',
+		foreignField: '_id',
+		as: 'savedArticle.memberData',
+	},
+};
+
+export const lookupSavedPost = {
+	$lookup: {
+		from: 'members',
+		localField: 'savedPost.memberId',
+		foreignField: '_id',
+		as: 'savedPost.memberData',
 	},
 };
 

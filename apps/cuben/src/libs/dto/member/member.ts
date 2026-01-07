@@ -39,13 +39,13 @@ export class Member {
 	memberDesc?: string;
 
 	@Field(() => Int, { nullable: true })
-	memberProducts?: number; // Optional
+	memberProducts?: number; 
 
 	@Field(() => Int, { nullable: true })
-	memberPosts?: number; // Optional
+	memberPosts?: number;
 
 	@Field(() => Int, { nullable: true })
-	memberArticles?: number; // Optional
+	memberArticles?: number; 
 
 	@Field(() => Int)
 	memberFollowers: number;
@@ -57,7 +57,7 @@ export class Member {
 	memberPoints: number;
 
 	@Field(() => Int)
-	memberLikes: number; // Saqladim
+	memberLikes: number; 
 
 	@Field(() => Int)
 	memberViews: number;
@@ -87,11 +87,11 @@ export class Member {
 	accessToken?: string;
 
 	/** from aggregation **/
-	@Field(() => MeLiked, { nullable: true }) // Fix: single MeLiked (array emas)
+	@Field(() => MeLiked, { nullable: true }) 
 	meLiked?: MeLiked; 
 
 	@Field(() => [MeFollowed], { nullable: true })
-	meFollowed?: MeFollowed[]; // Follow saqladim
+	meFollowed?: MeFollowed[]; 
 }
 
 @ObjectType()
@@ -105,6 +105,6 @@ export class Members {
 	@Field(() => [Member])
 	list: Member[];
 
-	@Field(() => TotalCounter, { nullable: true }) // Fix: single (array emas)
+	@Field(() => [TotalCounter], { nullable: true }) 
 	metaCounter: TotalCounter;
 }

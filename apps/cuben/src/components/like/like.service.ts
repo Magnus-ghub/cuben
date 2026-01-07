@@ -12,6 +12,7 @@ import { PostsInquiry } from '../../libs/dto/post/post.input';
 import { Posts } from '../../libs/dto/post/post';
 import { AllArticlesInquiry } from '../../libs/dto/article/article.input';
 import { Articles } from '../../libs/dto/article/article';
+import { lookupFavoriteArticle, lookupFavoritePost, lookupFavoriteProduct, lookupSavedArticle, lookupSavedPost, lookupSavedProduct } from '../../libs/config';
 
 @Injectable()
 export class LikeService {
@@ -55,7 +56,6 @@ export class LikeService {
         return !!result;
     }
 
-    // Single product uchun MeLiked
     public async getMeLiked(memberId: ObjectId, refId: ObjectId, targetType: LikeTarget): Promise<MeLiked> {
         const liked = await this.checkLikeExistence(memberId, {
             refId,
@@ -72,7 +72,6 @@ export class LikeService {
         return { liked, saved };
     }
 
-    // ⚡ OPTIMIZED: Bir nechta productlar uchun MeLiked (bulk operation)
     public async getBulkMeLiked(
         memberId: ObjectId, 
         productIds: ObjectId[], 
@@ -112,7 +111,6 @@ export class LikeService {
         return result;
     }
 
-    // ❤️ MY FAVORITES - LIKE action 
     public async getFavoriteProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         const { page, limit } = input;
         
@@ -145,22 +143,13 @@ export class LikeService {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
-                            // Member lookup
-                            {
-                                $lookup: {
-                                    from: 'members',
-                                    localField: 'favoriteProduct.memberId',
-                                    foreignField: '_id',
-                                    as: 'favoriteProduct.memberData',
-                                },
-                            },
+                            lookupFavoriteProduct,
                             { 
                                 $unwind: { 
                                     path: '$favoriteProduct.memberData', 
                                     preserveNullAndEmptyArrays: true 
                                 } 
                             },
-                            // SAVE status lookup (ikkala holatni ham tekshirish)
                             {
                                 $lookup: {
                                     from: 'likes',
@@ -182,16 +171,15 @@ export class LikeService {
                                     as: 'saveStatus',
                                 },
                             },
-                            // MeLiked qo'shish
                             {
                                 $addFields: {
                                     'favoriteProduct.meLiked': {
-                                        liked: true,  // Favorites da bor = liked true
-                                        saved: { $gt: [{ $size: '$saveStatus' }, 0] }  // Save qilinganmi?
+                                        liked: true,  
+                                        saved: { $gt: [{ $size: '$saveStatus' }, 0] }  
                                     }
                                 }
                             },
-                            { $project: { saveStatus: 0 } }  // Temporary field o'chirish
+                            { $project: { saveStatus: 0 } }  
                         ],
                         metaCounter: [{ $count: 'total' }],
                     },
@@ -199,18 +187,13 @@ export class LikeService {
             ])
             .exec();
 
-        const result: Products = { 
-            list: [], 
-            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
-        };
-        
-        result.list = data[0]?.list.map((ele) => ele.favoriteProduct) || [];
+        const result: Products = {list: [], metaCounter: data[0].metaCounter };
+        result.list = data[0].list.map((ele) => ele.favoriteProduct);
         
         console.log('✅ Favorites:', result.list.length);
         return result;
     }
 
-    // 💾 SAVED ITEMS - SAVE action 
     public async getSavedProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         const { page, limit } = input;
         
@@ -243,22 +226,13 @@ export class LikeService {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
-                            // Member lookup
-                            {
-                                $lookup: {
-                                    from: 'members',
-                                    localField: 'savedProduct.memberId',
-                                    foreignField: '_id',
-                                    as: 'savedProduct.memberData',
-                                },
-                            },
+                            lookupSavedProduct,
                             { 
                                 $unwind: { 
                                     path: '$savedProduct.memberData', 
                                     preserveNullAndEmptyArrays: true 
                                 } 
                             },
-                            // LIKE status lookup (ikkala holatni ham tekshirish)
                             {
                                 $lookup: {
                                     from: 'likes',
@@ -280,16 +254,15 @@ export class LikeService {
                                     as: 'likeStatus',
                                 },
                             },
-                            // MeLiked qo'shish
                             {
                                 $addFields: {
                                     'savedProduct.meLiked': {
-                                        liked: { $gt: [{ $size: '$likeStatus' }, 0] },  // Like qilinganmi?
-                                        saved: true    // Saved items da bor = saved true
+                                        liked: { $gt: [{ $size: '$likeStatus' }, 0] },  
+                                        saved: true    
                                     }
                                 }
                             },
-                            { $project: { likeStatus: 0 } }  // Temporary field o'chirish
+                            { $project: { likeStatus: 0 } }  
                         ],
                         metaCounter: [{ $count: 'total' }],
                     },
@@ -297,18 +270,13 @@ export class LikeService {
             ])
             .exec();
 
-        const result: Products = { 
-            list: [], 
-            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
-        };
-        
-        result.list = data[0]?.list.map((ele) => ele.savedProduct) || [];
+        const result: Products = {list: [], metaCounter: data[0].metaCounter };
+        result.list = data[0].list.map((ele) => ele.savedProduct);
         
         console.log('💾 Saved Items:', result.list.length);
         return result;
     }
 
-    // ❤️ MY FAVORITES - LIKE action 
     public async getFavoritePosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
         const { page, limit } = input;
         
@@ -341,22 +309,13 @@ export class LikeService {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
-                            // Member lookup
-                            {
-                                $lookup: {
-                                    from: 'members',
-                                    localField: 'favoritePost.memberId',
-                                    foreignField: '_id',
-                                    as: 'favoritePost.memberData',
-                                },
-                            },
+                            lookupFavoritePost,
                             { 
                                 $unwind: { 
                                     path: '$favoritePost.memberData', 
                                     preserveNullAndEmptyArrays: true 
                                 } 
                             },
-                            // SAVE status lookup (ikkala holatni ham tekshirish)
                             {
                                 $lookup: {
                                     from: 'likes',
@@ -378,7 +337,6 @@ export class LikeService {
                                     as: 'saveStatus',
                                 },
                             },
-                            // MeLiked qo'shish
                             {
                                 $addFields: {
                                     'favoritePost.meLiked': {
@@ -395,18 +353,13 @@ export class LikeService {
             ])
             .exec();
 
-        const result: Posts = { 
-            list: [], 
-            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
-        };
-        
-        result.list = data[0]?.list.map((ele) => ele.favoritePost) || [];
+        const result: Posts = {list: [], metaCounter: data[0].metaCounter };
+        result.list = data[0].list.map((ele) => ele.favoritePost);
         
         console.log('✅ Favorites:', result.list.length);
         return result;
     }
 
-    // 💾 SAVED ITEMS - SAVE action 
     public async getSavedPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
         const { page, limit } = input;
         
@@ -439,15 +392,7 @@ export class LikeService {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
-                            // Member lookup
-                            {
-                                $lookup: {
-                                    from: 'members',
-                                    localField: 'savedPost.memberId',
-                                    foreignField: '_id',
-                                    as: 'savedPost.memberData',
-                                },
-                            },
+                            lookupSavedPost,
                             { 
                                 $unwind: { 
                                     path: '$savedPost.memberData', 
@@ -493,18 +438,13 @@ export class LikeService {
             ])
             .exec();
 
-        const result: Posts = { 
-            list: [], 
-            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
-        };
-        
-        result.list = data[0]?.list.map((ele) => ele.savedPost) || [];
+        const result: Posts = {list: [], metaCounter: data[0].metaCounter };
+        result.list = data[0].list.map((ele) => ele.savedPost);
         
         console.log('💾 Saved Items:', result.list.length);
         return result;
     }
 
-    // ❤️ MY FAVORITES - LIKE action 
     public async getFavoriteArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
         const { page, limit } = input;
         
@@ -537,15 +477,7 @@ export class LikeService {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
-                            // Member lookup
-                            {
-                                $lookup: {
-                                    from: 'members',
-                                    localField: 'favoriteArticle.memberId',
-                                    foreignField: '_id',
-                                    as: 'favoriteArticle.memberData',
-                                },
-                            },
+                            lookupFavoriteArticle,
                             { 
                                 $unwind: { 
                                     path: '$favoriteArticle.memberData', 
@@ -591,18 +523,13 @@ export class LikeService {
             ])
             .exec();
 
-        const result: Articles = { 
-            list: [], 
-            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
-        };
-        
-        result.list = data[0]?.list.map((ele) => ele.favoriteArticle) || [];
+        const result: Articles = {list: [], metaCounter: data[0].metaCounter };
+        result.list = data[0].list.map((ele) => ele.favoriteArticle);
         
         console.log('✅ Favorites:', result.list.length);
         return result;
     }
 
-    // 💾 SAVED ITEMS - SAVE action 
     public async getSavedArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
         const { page, limit } = input;
         
@@ -635,15 +562,7 @@ export class LikeService {
                         list: [
                             { $skip: (page - 1) * limit },
                             { $limit: limit },
-                            // Member lookup
-                            {
-                                $lookup: {
-                                    from: 'members',
-                                    localField: 'savedArticle.memberId',
-                                    foreignField: '_id',
-                                    as: 'savedArticle.memberData',
-                                },
-                            },
+                            lookupSavedArticle,
                             { 
                                 $unwind: { 
                                     path: '$savedArticle.memberData', 
@@ -689,12 +608,8 @@ export class LikeService {
             ])
             .exec();
 
-        const result: Articles = { 
-            list: [], 
-            metaCounter: data[0]?.metaCounter?.[0] || { total: 0 }
-        };
-        
-        result.list = data[0]?.list.map((ele) => ele.savedArticle) || [];
+        const result: Articles = {list: [], metaCounter: data[0].metaCounter };
+        result.list = data[0].list.map((ele) => ele.savedArticle);
         
         console.log('💾 Saved Items:', result.list.length);
         return result;

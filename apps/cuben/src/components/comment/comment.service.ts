@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, InternalServerErrorException } from '@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
 import { ArticleService } from '../article/article.service';
-import { MemberService } from '../member/member.service';
 import { CommentInput, CommentsInquiry } from '../../libs/dto/comment/comment.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { CommentUpdate } from '../../libs/dto/comment/comment.update';
@@ -10,9 +9,7 @@ import { CommentGroup, CommentStatus } from '../../libs/enums/comment.enum';
 import { Comments, Comment } from '../../libs/dto/comment/comment';
 import { T } from '../../libs/types/common';
 import { lookupMember } from '../../libs/config';
-import { ProductService } from '../product/product.service';
 import { PostService } from '../post/post.service';
-import { LikeService } from '../like/like.service';
 
 @Injectable()
 export class CommentService {
@@ -101,13 +98,10 @@ export class CommentService {
 
 	public async getComments(memberId: ObjectId | null, input: CommentsInquiry): Promise<Comments> {
 		const { commentRefId } = input.search;
-		const match: T = { 
-			commentRefId, 
-			commentStatus: CommentStatus.ACTIVE 
-		};
+		const match: T = { commentRefId, commentStatus: CommentStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
-		const result: any[] = await this.commentModel
+		const result: Comments[] = await this.commentModel
 			.aggregate([
 				{ $match: match },
 				{ $sort: sort },
@@ -126,7 +120,7 @@ export class CommentService {
 			.exec();
 		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		return result[0]; // as Comments removed (lean natija)
+		return result[0]; 
 	}
 
 	public async removeCommentByAdmin(input: ObjectId): Promise<Comment> {

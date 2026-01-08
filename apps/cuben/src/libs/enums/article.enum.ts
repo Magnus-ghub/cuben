@@ -1,8 +1,6 @@
 import { registerEnumType } from '@nestjs/graphql';
 
 export enum ArticleCategory {
-	COMMUNITY = 'COMMUNITY', 
-	MARKET = 'MARKET', 
 	CAREER = 'CAREER', 
 	KNOWLEDGE = 'KNOWLEDGE', 
 	EVENTS = 'EVENTS', 

@@ -12,12 +12,12 @@ export class ArticleInput {
 	articleCategory: ArticleCategory;
 
 	@IsNotEmpty()
-	@Length(3, 50)
+	@Length(3, 200)
 	@Field(() => String)
 	articleTitle: string;
 
 	@IsNotEmpty()
-	@Length(3, 250)
+	@Length(3, 450)
 	@Field(() => String)
 	articleContent: string;
 

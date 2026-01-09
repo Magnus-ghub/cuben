@@ -19,9 +19,8 @@ export class ProductResolver {
 
     // ========== MUTATIONS ==========
 
-    @Roles(MemberType.USER, MemberType.ADMIN)
-    @UseGuards(RolesGuard)
-    @Mutation(() => Product)
+    @UseGuards(AuthGuard)
+    @Mutation((returns) => Product)
     public async createProduct(
         @Args('input') input: ProductInput,
         @AuthMember('_id') memberId: ObjectId,
@@ -31,9 +30,8 @@ export class ProductResolver {
         return await this.productService.createProduct(input);
     }
 
-    @Roles(MemberType.USER, MemberType.ADMIN) 
-    @UseGuards(RolesGuard)
-    @Mutation(() => Product)
+    @UseGuards(AuthGuard)
+    @Mutation((returns) => Product)
     public async updateProduct(
         @Args('input') input: ProductUpdate,
         @AuthMember('_id') memberId: ObjectId,
@@ -41,6 +39,17 @@ export class ProductResolver {
         console.log('Mutation: updateProduct');
         input._id = shapeIntoMongoObjectId(input._id);
         return await this.productService.updateProduct(memberId, input);
+    }
+
+    @UseGuards(AuthGuard)
+    @Mutation((returns) => Product)
+    public async removeProduct(
+        @Args('productId') input: string,
+        @AuthMember('_id') memberId: ObjectId,
+    ): Promise<Product> {
+        console.log('Mutation: removeProduct');
+        const productId = shapeIntoMongoObjectId(input);
+        return await this.productService.removeProduct(productId);
     }
 
     // ❤️ LIKE TOGGLE

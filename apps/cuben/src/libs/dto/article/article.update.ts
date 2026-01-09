@@ -19,12 +19,12 @@ export class ArticleUpdate {
 	articleCategory?: ArticleCategory;
 
 	@IsOptional()
-	@Length(3, 50)
+	@Length(3, 200)
 	@Field(() => String, { nullable: true })
 	articleTitle?: string;
 
 	@IsOptional()
-	@Length(3, 250)
+	@Length(3, 500)
 	@Field(() => String, { nullable: true })
 	articleContent?: string;
 

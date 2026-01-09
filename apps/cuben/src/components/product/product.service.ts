@@ -105,6 +105,14 @@ export class ProductService {
         return result.toObject() as Product;
     }
 
+    public async removeProduct(productId: ObjectId): Promise<Product> {
+        const search: T = { _id: productId, productStatus: ProductStatus.ACTIVE };
+        const result = await this.productModel.findOneAndDelete(search).exec();
+        if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
+            
+        return result;
+    }
+
     public async getProducts(memberId: ObjectId | null, input: ProductsInquiry): Promise<Products> {
         const match: T = { productStatus: ProductStatus.ACTIVE };
         const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };

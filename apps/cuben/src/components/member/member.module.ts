@@ -7,11 +7,17 @@ import { AuthModule } from '../auth/auth.module';
 import { ViewModule } from '../view/view.module';
 import { LikeModule } from '../like/like.module';
 import FollowSchema from '../../schemas/Follow.model';
+import ProductSchema from '../../schemas/Product.model';
+import PostSchema from '../../schemas/Post.model';
+import ArticleSchema from '../../schemas/Article.model';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Member', schema: MemberSchema}]),
     MongooseModule.forFeature([{ name: 'Follow', schema: FollowSchema }]),
+    MongooseModule.forFeature([{ name: 'Product', schema: ProductSchema }]),
+    MongooseModule.forFeature([{ name: 'Post', schema: PostSchema }]),
+    MongooseModule.forFeature([{ name: 'Article', schema: ArticleSchema }]),
     AuthModule,
     ViewModule,
     LikeModule,

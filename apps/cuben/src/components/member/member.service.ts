@@ -12,13 +12,18 @@ import { LikeService } from '../like/like.service';
 import { LikeTarget, LikeAction } from '../../libs/enums/like.enum';
 import { Follower, Following, MeFollowed } from '../../libs/dto/follow/follow';
 import { lookupMember } from '../../libs/config';
-import { MeLiked } from '../../libs/dto/like/like';
+import { Product } from '../../libs/dto/product/product';
+import { Article } from '../../libs/dto/article/article';
+import { Post } from '../../libs/dto/post/post';
 
 @Injectable()
 export class MemberService {
 	constructor(
 		@InjectModel('Member') private readonly memberModel: Model<Member>,
 		@InjectModel('Follow') private readonly followModel: Model<Follower | Following>, 
+		@InjectModel('Product') private readonly productModel: Model<Product>, 
+		@InjectModel('Article') private readonly articleModel: Model<Article>, 
+		@InjectModel('Post') private readonly postModel: Model<Post>, 
 		private authService: AuthService,
 		private likeService: LikeService,
 	) {}
@@ -52,34 +57,34 @@ export class MemberService {
 		return response;
 	}
 
-	public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<Member> {
-		const search: T = {
-			_id: targetId,
-			memberStatus: {
-				$in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
-			},
-		};
-		const targetMember = await this.memberModel.findOne(search).lean().exec();
-		if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+	// member.service.ts ichida
 
-		// View removed
+public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<Member> {
+    const search: T = {
+        _id: targetId,
+        memberStatus: {
+            $in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
+        },
+    };
 
-		// Follow saqladim
-		let meFollowed: MeFollowed[] = [];
-		if (memberId) {
-			meFollowed = await this.checkSubscription(memberId, targetId);
-		}
-		targetMember.meFollowed = meFollowed;
+    // 1. Memberni topamiz
+    const targetMember = await this.memberModel.findOne(search).lean().exec();
+    if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		// meLiked (content likes/saves)
-		let meLiked: MeLiked = { liked: false, saved: false };
-		if (memberId) {
-			meLiked = await this.likeService.getMeLiked(memberId, targetId, LikeTarget.MEMBER); // TargetType.MEMBER ni qayta qo'shish mumkin, lekin like removed bo'lgani uchun content uchun ishlatdim
-		}
-		targetMember.meLiked = meLiked;
+    const [productsCnt, articlesCnt, postsCnt] = await Promise.all([
+        this.productModel.countDocuments({ memberId: targetId, productStatus: 'ACTIVE' }),
+        this.articleModel.countDocuments({ memberId: targetId, articleStatus: 'ACTIVE' }),
+        this.postModel.countDocuments({ memberId: targetId, postStatus: 'ACTIVE' }),
+    ]);
 
-		return targetMember;
-	}
+    // 3. Qiymatlarni yangilaymiz
+    targetMember.memberProducts = productsCnt;
+    targetMember.memberArticles = articlesCnt;
+    targetMember.memberPosts = postsCnt;
+
+    // ... qolgan follow va like mantiqlari ...
+    return targetMember;
+}
 
 	private async checkSubscription(followerId: ObjectId, followingId: ObjectId): Promise<MeFollowed[]> {
         const result = await this.followModel.findOne({ followingId: followingId, followerId: followerId }).exec();

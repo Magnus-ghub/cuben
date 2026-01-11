@@ -35,7 +35,7 @@ const MemberSchema = new Schema({
     memberPassword: {
         type: String,
         select: false,
-        required: true, // Typo fix: 'reqired' → 'required'
+        required: true, 
     },
 
     memberFullName: {
@@ -87,7 +87,7 @@ const MemberSchema = new Schema({
 
     memberLikes: {
         type: Number,
-        default: 0, // Saqladim (content likes uchun)
+        default: 0, 
     },
 
     memberViews: {

@@ -20,10 +20,10 @@ import { Post } from '../../libs/dto/post/post';
 export class MemberService {
 	constructor(
 		@InjectModel('Member') private readonly memberModel: Model<Member>,
-		@InjectModel('Follow') private readonly followModel: Model<Follower | Following>, 
-		@InjectModel('Product') private readonly productModel: Model<Product>, 
-		@InjectModel('Article') private readonly articleModel: Model<Article>, 
-		@InjectModel('Post') private readonly postModel: Model<Post>, 
+		@InjectModel('Follow') private readonly followModel: Model<Follower | Following>,
+		@InjectModel('Product') private readonly productModel: Model<Product>,
+		@InjectModel('Article') private readonly articleModel: Model<Article>,
+		@InjectModel('Post') private readonly postModel: Model<Post>,
 		private authService: AuthService,
 		private likeService: LikeService,
 	) {}
@@ -57,39 +57,37 @@ export class MemberService {
 		return response;
 	}
 
-	// member.service.ts ichida
+	public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<Member> {
+		const search: T = {
+			_id: targetId,
+			memberStatus: {
+				$in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
+			},
+		};
 
-public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<Member> {
-    const search: T = {
-        _id: targetId,
-        memberStatus: {
-            $in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
-        },
-    };
+		// 1. Memberni topamiz
+		const targetMember = await this.memberModel.findOne(search).lean().exec();
+		if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-    // 1. Memberni topamiz
-    const targetMember = await this.memberModel.findOne(search).lean().exec();
-    if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+		const [productsCnt, articlesCnt, postsCnt] = await Promise.all([
+			this.productModel.countDocuments({ memberId: targetId, productStatus: 'ACTIVE' }),
+			this.articleModel.countDocuments({ memberId: targetId, articleStatus: 'ACTIVE' }),
+			this.postModel.countDocuments({ memberId: targetId, postStatus: 'ACTIVE' }),
+		]);
 
-    const [productsCnt, articlesCnt, postsCnt] = await Promise.all([
-        this.productModel.countDocuments({ memberId: targetId, productStatus: 'ACTIVE' }),
-        this.articleModel.countDocuments({ memberId: targetId, articleStatus: 'ACTIVE' }),
-        this.postModel.countDocuments({ memberId: targetId, postStatus: 'ACTIVE' }),
-    ]);
+		// 3. Qiymatlarni yangilaymiz
+		targetMember.memberProducts = productsCnt;
+		targetMember.memberArticles = articlesCnt;
+		targetMember.memberPosts = postsCnt;
 
-    // 3. Qiymatlarni yangilaymiz
-    targetMember.memberProducts = productsCnt;
-    targetMember.memberArticles = articlesCnt;
-    targetMember.memberPosts = postsCnt;
-
-    // ... qolgan follow va like mantiqlari ...
-    return targetMember;
-}
+		// ... qolgan follow va like mantiqlari ...
+		return targetMember;
+	}
 
 	private async checkSubscription(followerId: ObjectId, followingId: ObjectId): Promise<MeFollowed[]> {
-        const result = await this.followModel.findOne({ followingId: followingId, followerId: followerId }).exec();
-        return result ? [{ followerId: followerId, followingId: followingId, myFollowing: true }] : [];
-    }
+		const result = await this.followModel.findOne({ followingId: followingId, followerId: followerId }).exec();
+		return result ? [{ followerId: followerId, followingId: followingId, myFollowing: true }] : [];
+	}
 
 	public async updateMember(memberId: ObjectId, input: MemberUpdate): Promise<Member> {
 		const result: Member = await this.memberModel
@@ -113,10 +111,11 @@ public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<M
 		const match: T = { memberType: MemberType.AGENT, memberStatus: MemberStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
-		if (text) match.$or = [
-			{ memberNick: { $regex: new RegExp(text, 'i') } },
-			{ memberFullName: { $regex: new RegExp(text, 'i') } }
-		];
+		if (text)
+			match.$or = [
+				{ memberNick: { $regex: new RegExp(text, 'i') } },
+				{ memberFullName: { $regex: new RegExp(text, 'i') } },
+			];
 		console.log('match:', match);
 
 		const result = await this.memberModel
@@ -155,7 +154,7 @@ public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<M
 									// 	liked: { $gt: [{ $size: { $filter: { input: '$tempMeLiked', cond: { $eq: ['$$this.action', LikeAction.LIKE] } } }, 0] },
 									// 	saved: { $gt: [{ $size: { $filter: { input: '$tempMeLiked', cond: { $eq: ['$$this.action', LikeAction.SAVE] } } }, 0] }
 									// }
-								}
+								},
 							},
 							{ $project: { tempMeLiked: 0 } },
 							lookupMember,
@@ -178,10 +177,11 @@ public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<M
 
 		if (memberStatus) match.memberStatus = memberStatus;
 		if (memberType) match.memberType = memberType;
-		if (text) match.$or = [
-			{ memberNick: { $regex: new RegExp(text, 'i') } },
-			{ memberFullName: { $regex: new RegExp(text, 'i') } }
-		];
+		if (text)
+			match.$or = [
+				{ memberNick: { $regex: new RegExp(text, 'i') } },
+				{ memberFullName: { $regex: new RegExp(text, 'i') } },
+			];
 		console.log('match:', match);
 
 		const result = await this.memberModel
@@ -197,9 +197,9 @@ public async getMember(memberId: ObjectId | null, targetId: ObjectId): Promise<M
 								$addFields: {
 									meLiked: {
 										liked: false,
-										saved: false
-									}
-								}
+										saved: false,
+									},
+								},
 							},
 							lookupMember,
 							{ $unwind: { path: '$memberData', preserveNullAndEmptyArrays: true } },

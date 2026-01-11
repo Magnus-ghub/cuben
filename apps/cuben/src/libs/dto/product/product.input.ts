@@ -1,6 +1,6 @@
 import { Field, InputType, Int } from "@nestjs/graphql";
 import {IsIn, IsInt, IsNotEmpty, IsOptional, Length, Min} from 'class-validator';
-import { ProductLocation, ProductStatus, ProductType } from "../../enums/product.enum";
+import { ProductStatus, ProductType } from "../../enums/product.enum";
 import { ObjectId } from "mongoose";
 import {  availableProductSorts } from "../../config";
 import { Direction } from "../../enums/common.enum";
@@ -10,11 +10,6 @@ export class ProductInput {
   @IsNotEmpty()
   @Field(() => ProductType)
   productType: ProductType;
-
-  @IsNotEmpty()
-  @Length(3,100)
-  @Field(() => ProductLocation)
-  productLocation: ProductLocation;
 
   @IsOptional()
   @Field(() => String)
@@ -64,10 +59,6 @@ export class PISearch{
   @IsOptional()
   @Field(() => String, {nullable: true})
   memberId?: ObjectId;    
-
-  @IsOptional()
-  @Field(() => [ProductLocation], {nullable: true})
-  locationList?: ProductLocation[];
 
   @IsOptional()
   @Field(() => [ProductType], {nullable: true})
@@ -158,10 +149,6 @@ class ALPISearch{
   @IsOptional()
   @Field(() => ProductStatus, {nullable: true})
   productStatus?: ProductStatus;
-
-  @IsOptional()
-  @Field(() => [ProductLocation], {nullable: true})
-  productLocationList?: ProductLocation[];
 } 
 
 @InputType()
@@ -184,10 +171,6 @@ export class AllProductsInquiry{
   @IsOptional()
   @Field(()=> Direction, {nullable: true})
   direction?: Direction;
-
-  @IsOptional()
-  @Field(() => [ProductLocation], { nullable: true })
-  productLocationList?: ProductLocation[];
 
   @IsNotEmpty()
   @Field(() => ALPISearch) 

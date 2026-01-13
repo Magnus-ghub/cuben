@@ -17,7 +17,8 @@ import { ArticleUpdate } from '../../libs/dto/article/article.update';
 export class ArticleResolver {
 	constructor(private readonly articleService: ArticleService) {}
 
-	@UseGuards(AuthGuard)
+	@Roles(MemberType.AGENT)
+	@UseGuards(RolesGuard)
 	@Mutation(() => Article)
 	public async createArticle(
 		@Args('input') input: ArticleInput,
@@ -38,7 +39,8 @@ export class ArticleResolver {
 		return await this.articleService.getArticle(memberId || null, articleId);
 	}
 
-	@UseGuards(AuthGuard)
+	@Roles(MemberType.AGENT)
+	@UseGuards(RolesGuard)
 	@Mutation(() => Article)
 	public async updateArticle(
 		@Args('input') input: ArticleUpdate,

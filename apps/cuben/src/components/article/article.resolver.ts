@@ -130,7 +130,6 @@ export class ArticleResolver {
 		return await this.articleService.removeArticleByAdmin(articleId);
 	}
 
-	// ❤️ MY FAVORITES (LIKED articles)
 	@UseGuards(AuthGuard)
 	@Query(() => Articles)
 	public async getLikedArticles(
@@ -141,7 +140,6 @@ export class ArticleResolver {
 		return await this.articleService.getLikedArticles(memberId, input);
 	}
 
-	// 💾 SAVED ITEMS (SAVED articles)
 	@UseGuards(AuthGuard)
 	@Query(() => Articles)
 	public async getSavedArticles(

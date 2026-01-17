@@ -29,7 +29,7 @@ productAddress?: string;
 @IsOptional()
 @Length(3,100)
 @Field(()=>String, {nullable: true})
-productTitle?: string;
+productName?: string;
 
 @IsOptional()
 @Field(()=>Number, {nullable: true})

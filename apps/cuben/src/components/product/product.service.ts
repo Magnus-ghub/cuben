@@ -248,7 +248,7 @@ export class ProductService {
         if (periodsRange) match.createdAt = { $gte: periodsRange.start, $lte: periodsRange.end };
 
         if (text) match.$or = [
-            { productTitle: { $regex: new RegExp(text, 'i') } },
+            { productName: { $regex: new RegExp(text, 'i') } },
             { productDesc: { $regex: new RegExp(text, 'i') } }
         ];
     }

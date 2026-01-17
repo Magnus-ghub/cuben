@@ -16,10 +16,10 @@ export class Product {
     productStatus: ProductStatus;
 
     @Field(() => String, { nullable: true })
-    productAddress: string;
+    productAddress?: string;
 
     @Field(() => String)
-    productTitle: string;
+    productName: string;
 
     @Field(() => String, { nullable: true })
     productDesc?: string;

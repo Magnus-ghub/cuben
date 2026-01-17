@@ -9,6 +9,12 @@ const ProductSchema = new Schema(
 			required: true,
 		},
 
+		productCondition: {
+			type: String,
+			enum: ProductCondition,
+			default: ProductCondition.USED,
+		},
+
 		productStatus: {
 			type: String,
 			enum: ProductStatus,
@@ -19,7 +25,7 @@ const ProductSchema = new Schema(
 			type: String,
 		},
 
-		productTitle: {
+		productName: {
 			type: String,
 			required: true,
 		},
@@ -42,12 +48,6 @@ const ProductSchema = new Schema(
 		productSaves: {
 			type: Number,
 			default: 0,
-		},
-
-		productCondition: {
-			type: String,
-			enum: ProductCondition,
-			default: ProductCondition.USED,
 		},
 
 		productImages: {
@@ -81,6 +81,6 @@ const ProductSchema = new Schema(
 	{ timestamps: true, collection: 'products' },
 );
 
-ProductSchema.index({ productType: 1, productTitle: 1, productPrice: 1 }, { unique: true });
+ProductSchema.index({ productType: 1, productName: 1, productPrice: 1 }, { unique: true });
 
 export default ProductSchema;

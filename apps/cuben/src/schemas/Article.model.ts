@@ -34,11 +34,6 @@ const ArticleSchema = new Schema(
 			default: 0,
 		},
 
-		articleSaves: {
-			type: Number,
-			default: 0,
-		},
-
 		articleViews: {
 			type: Number,
 			default: 0,

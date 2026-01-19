@@ -150,14 +150,4 @@ export class ArticleResolver {
 		console.log('Query: getFavorites (LIKED articles)');
 		return await this.articleService.getLikedArticles(memberId, input);
 	}
-
-	@UseGuards(AuthGuard)
-	@Query(() => Articles)
-	public async getSavedArticles(
-		@Args('input') input: AllArticlesInquiry,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Articles> {
-		console.log('Query: getSavedItems (SAVED articles)');
-		return await this.articleService.getSavedArticles(memberId, input);
-	}
 }

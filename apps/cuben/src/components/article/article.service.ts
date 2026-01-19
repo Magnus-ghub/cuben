@@ -283,12 +283,6 @@ export class ArticleService {
 		return await this.likeService.getFavoriteArticles(memberId, input);
 	}
 
-	// 💾 SAVED ITEMS
-	public async getSavedArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
-		console.log('📋 Getting Saved articles...');
-		return await this.likeService.getSavedArticles(memberId, input);
-	}
-
 	// Yangi: Faqat counter update uchun (CommentService.createComment dan keyin chaqiriladi)
 	public async incrementArticleComments(articleId: ObjectId): Promise<Article> {
 		return await this.articleStatsEditor({ _id: articleId, targetKey: 'articleComments', modifier: 1 });

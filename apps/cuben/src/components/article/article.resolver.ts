@@ -51,6 +51,17 @@ export class ArticleResolver {
 		return await this.articleService.updateArticle(memberId, input);
 	}
 
+	@UseGuards(AuthGuard)
+	@Mutation((returns) => Article)
+	public async removeArticle(
+		@Args('articleId') input: string,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Article> {
+		console.log('Mutation: removeArticle');
+		const articleId = shapeIntoMongoObjectId(input);
+		return await this.articleService.removeArticle(articleId);
+	}
+
 	@UseGuards(WithoutGuard)
 	@Query(() => Articles)
 	public async getArticles(

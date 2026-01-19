@@ -117,6 +117,14 @@ export class ArticleService {
 		return result;
 	}
 
+	public async removeArticle(articleId: ObjectId): Promise<Article> {
+		const search: T = { _id: articleId, articleStatus: ArticleStatus.ACTIVE };
+		const result = await this.articleModel.findOneAndDelete(search).exec();
+		if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
+
+		return result;
+	}
+
 	public async getArticles(memberId: ObjectId | null, input: ArticlesInquiry): Promise<Articles> {
 		const { articleCategory, text } = input.search;
 		const match: T = { articleStatus: ArticleStatus.ACTIVE };

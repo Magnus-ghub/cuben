@@ -95,6 +95,14 @@ export class PostService {
 		return result;
 	}
 
+	public async removePost(postId: ObjectId): Promise<Post> {
+		const search: T = { _id: postId, postStatus: PostStatus.ACTIVE };
+		const result = await this.postModel.findOneAndDelete(search).exec();
+		if (!result) throw new InternalServerErrorException(Message.REMOVE_FAILED);
+
+		return result;
+	}
+
 	public async getPosts(memberId: ObjectId | null, input: PostsInquiry): Promise<Posts> {
 		const match: T = { postStatus: PostStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };

@@ -18,8 +18,7 @@ import { LikeAction, LikeTarget } from '../../libs/enums/like.enum';
 export class PostResolver {
 	constructor(private readonly postService: PostService) {}
 
-	@Roles(MemberType.USER, MemberType.ADMIN)
-	@UseGuards(RolesGuard)
+	@UseGuards(AuthGuard)
 	@Mutation(() => Post)
 	public async createPost(@Args('input') input: PostInput, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
 		console.log('Mutation: createPost');
@@ -35,13 +34,23 @@ export class PostResolver {
 		return await this.postService.getPost(memberId || null, postId);
 	}
 
-	@Roles(MemberType.USER, MemberType.ADMIN)
-	@UseGuards(RolesGuard)
+	@UseGuards(AuthGuard)
 	@Mutation(() => Post)
 	public async updatePost(@Args('input') input: PostUpdate, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
 		console.log('Mutation: updatePost');
 		input._id = shapeIntoMongoObjectId(input._id);
 		return await this.postService.updatePost(memberId, input);
+	}
+
+	@UseGuards(AuthGuard)
+	@Mutation((returns) => Post)
+	public async removePost(
+		@Args('postId') input: string,
+		@AuthMember('_id') memberId: ObjectId,
+	): Promise<Post> {
+		console.log('Mutation: removePost');
+		const postId = shapeIntoMongoObjectId(input);
+		return await this.postService.removePost(postId);
 	}
 
 	@UseGuards(WithoutGuard)

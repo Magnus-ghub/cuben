@@ -1,4 +1,5 @@
 import { registerEnumType } from '@nestjs/graphql';
+import { error } from 'console';
 
 export enum ProductType {
 	EDU = 'EDU', 
@@ -32,4 +33,3 @@ export enum ProductCondition {
 registerEnumType(ProductCondition, {
 	name: 'ProductCondition',
 });
-

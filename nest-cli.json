@@ -21,11 +21,11 @@
     },
     "cuben-batch": {
       "type": "application",
-      "root": "apps/cuebn-batch",
+      "root": "apps/cuben-batch",
       "entryFile": "main",
       "sourceRoot": "apps/cuben-batch/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/cuebn-batch/tsconfig.app.json"
+        "tsConfigPath": "apps/cuben-batch/tsconfig.app.json"
       }
     }
   }

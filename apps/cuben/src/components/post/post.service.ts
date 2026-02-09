@@ -8,7 +8,6 @@ import { StatisticModifier, T } from '../../libs/types/common';
 import { shapeIntoMongoObjectId } from '../../libs/config';
 import { LikeService } from '../like/like.service';
 import { MeLiked } from '../../libs/dto/like/like';
-import { CommentService } from '../comment/comment.service';
 import { Post, Posts } from '../../libs/dto/post/post';
 import { PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
 import { PostUpdate } from '../../libs/dto/post/post.update';
@@ -208,13 +207,11 @@ export class PostService {
 		return result[0];
 	}
 
-	// ❤️ MY FAVORITES
 	public async getLikedPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
 		console.log('📋 Getting Favorite Posts (LIKED)...');
 		return await this.likeService.getFavoritePosts(memberId, input);
 	}
 
-	// 💾 SAVED ITEMS
 	public async getSavedPosts(memberId: ObjectId, input: PostsInquiry): Promise<Posts> {
 		console.log('📋 Getting Saved Products...');
 		return await this.likeService.getSavedPosts(memberId, input);
@@ -273,7 +270,6 @@ export class PostService {
 		return result.toObject() as Post;
 	}
 
-	// Yangi: Faqat counter update uchun (CommentService.createComment dan keyin chaqiriladi)
 	public async incrementPostComments(postId: ObjectId): Promise<Post> {
 		return await this.postStatsEditor({ _id: postId, targetKey: 'postComments', modifier: 1 });
 	}

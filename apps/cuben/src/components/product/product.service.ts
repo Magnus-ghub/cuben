@@ -6,7 +6,6 @@ import { MemberService } from '../member/member.service';
 import { ViewService } from '../view/view.service';
 import { OrdinaryInquiry, ProductInput, ProductsInquiry } from '../../libs/dto/product/product.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
-import moment from 'moment';
 import { StatisticModifier, T } from '../../libs/types/common';
 import { ProductStatus } from '../../libs/enums/product.enum';
 import { ViewGroup } from '../../libs/enums/view.enum';
@@ -43,7 +42,7 @@ export class ProductService {
     public async getProduct(memberId: ObjectId | null, productId: ObjectId): Promise<Product> {
         const search: T = {
             _id: productId,
-            productStatus: ProductStatus.ACTIVE,
+            productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED, ProductStatus.SOLD] },
         };
 
         const targetProduct: any = await this.productModel.findOne(search).lean().exec();
@@ -85,11 +84,11 @@ export class ProductService {
         const search: T = {
             _id: input._id,
             memberId: memberId,
-            productStatus: ProductStatus.ACTIVE,
+            productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED] },
         };
 
-        if (productStatus === ProductStatus.SOLD) soldAt = moment().toDate();
-        else if (productStatus === ProductStatus.DELETE) deletedAt = moment().toDate();
+        if (productStatus === ProductStatus.SOLD) soldAt = new Date();
+        else if (productStatus === ProductStatus.DELETE) deletedAt = new Date();
 
         const result = await this.productModel.findOneAndUpdate(search, input, { new: true }).exec();
         if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
@@ -114,7 +113,7 @@ export class ProductService {
     }
 
     public async getProducts(memberId: ObjectId | null, input: ProductsInquiry): Promise<Products> {
-        const match: T = { productStatus: ProductStatus.ACTIVE };
+        const match: T = { productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED, ProductStatus.SOLD] } };
         const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
 
         this.shapeMatchQuery(match, input);
@@ -256,7 +255,7 @@ export class ProductService {
     // ❤️ LIKE TOGGLE
     public async likeTargetProduct(memberId: ObjectId, likeRefId: ObjectId): Promise<Product> {
         const target: any = await this.productModel
-            .findOne({ _id: likeRefId, productStatus: ProductStatus.ACTIVE })
+            .findOne({ _id: likeRefId, productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED, ProductStatus.SOLD] } })
             .exec();
         if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
@@ -280,7 +279,7 @@ export class ProductService {
     // 💾 SAVE TOGGLE
     public async saveTargetProduct(memberId: ObjectId, saveRefId: ObjectId): Promise<Product> {
         const target: any = await this.productModel
-            .findOne({ _id: saveRefId, productStatus: ProductStatus.ACTIVE })
+            .findOne({ _id: saveRefId, productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED, ProductStatus.SOLD] } })
             .exec();
         if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 

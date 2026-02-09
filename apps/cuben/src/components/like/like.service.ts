@@ -273,7 +273,7 @@ export class LikeService {
         const result: Products = {list: [], metaCounter: data[0].metaCounter };
         result.list = data[0].list.map((ele) => ele.savedProduct);
         
-        console.log('💾 Saved Items:', result.list.length);
+        console.log('Saved Items:', result.list.length);
         return result;
     }
 
@@ -441,7 +441,7 @@ export class LikeService {
         const result: Posts = {list: [], metaCounter: data[0].metaCounter };
         result.list = data[0].list.map((ele) => ele.savedPost);
         
-        console.log('💾 Saved Items:', result.list.length);
+        console.log('Saved Items:', result.list.length);
         return result;
     }
 

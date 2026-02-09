@@ -63,7 +63,6 @@ export class PostResolver {
 		return await this.postService.getPosts(memberId || null, input);
 	}
 
-	// ❤️ LIKE TOGGLE
 	@UseGuards(AuthGuard)
 	@Mutation(() => Post)
 	public async likeTargetPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
@@ -72,7 +71,6 @@ export class PostResolver {
 		return await this.postService.likeTargetPost(memberId, likeRefId);
 	}
 
-	// 💾 SAVE TOGGLE
 	@UseGuards(AuthGuard)
 	@Mutation(() => Post)
 	public async saveTargetPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
@@ -81,7 +79,6 @@ export class PostResolver {
 		return await this.postService.saveTargetPost(memberId, saveRefId);
 	}
 
-	// ❤️ MY FAVORITES (LIKED products)
 	@UseGuards(AuthGuard)
 	@Query(() => Posts)
 	public async getLikedPosts(
@@ -92,7 +89,6 @@ export class PostResolver {
 		return await this.postService.getLikedPosts(memberId, input);
 	}
 
-	// 💾 SAVED ITEMS (SAVED posts)
 	@UseGuards(AuthGuard)
 	@Query(() => Posts)
 	public async getSavedPosts(

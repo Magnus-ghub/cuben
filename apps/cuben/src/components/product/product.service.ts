@@ -34,7 +34,6 @@ export class ProductService {
             });
             return result.toObject() as Product;
         } catch (err) {
-            console.log('Error, Service.model:', err.message);
             throw new BadRequestException(Message.CREATE_FAILED);
         }
     }
@@ -220,19 +219,16 @@ export class ProductService {
         return result[0] as Products;
     }
 
-    // ❤️ MY FAVORITES
     public async getLikedProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         console.log('📋 Getting Favorite Products (LIKED)...');
         return await this.likeService.getFavoriteProducts(memberId, input);
     }
 
-    // 💾 SAVED ITEMS
     public async getSavedProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         console.log('📋 Getting Saved Products...');
         return await this.likeService.getSavedProducts(memberId, input);
     }
 
-    // 👁️ VISITED
     public async getVisited(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
         return await this.viewService.getVisitedProducts(memberId, input);
     }
@@ -252,7 +248,6 @@ export class ProductService {
         ];
     }
 
-    // ❤️ LIKE TOGGLE
     public async likeTargetProduct(memberId: ObjectId, likeRefId: ObjectId): Promise<Product> {
         const target: any = await this.productModel
             .findOne({ _id: likeRefId, productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED, ProductStatus.SOLD] } })
@@ -276,7 +271,6 @@ export class ProductService {
         return result.toObject() as Product;
     }
 
-    // 💾 SAVE TOGGLE
     public async saveTargetProduct(memberId: ObjectId, saveRefId: ObjectId): Promise<Product> {
         const target: any = await this.productModel
             .findOne({ _id: saveRefId, productStatus: { $in: [ProductStatus.ACTIVE, ProductStatus.RESERVED, ProductStatus.SOLD] } })

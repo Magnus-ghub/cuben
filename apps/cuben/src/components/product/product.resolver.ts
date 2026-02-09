@@ -52,7 +52,6 @@ export class ProductResolver {
         return await this.productService.removeProduct(productId);
     }
 
-    // ❤️ LIKE TOGGLE
     @UseGuards(AuthGuard)
     @Mutation(() => Product)
     public async likeTargetProduct(
@@ -64,7 +63,6 @@ export class ProductResolver {
         return await this.productService.likeTargetProduct(memberId, likeRefId);
     }
 
-    // 💾 SAVE TOGGLE
     @UseGuards(AuthGuard)
     @Mutation(() => Product)
     public async saveTargetProduct(
@@ -90,7 +88,6 @@ export class ProductResolver {
         return await this.productService.getProduct(memberId || null, productId);
     }
 
-    // Products list
     @UseGuards(WithoutGuard)
     @Query(() => Products)
     public async getProducts(
@@ -101,7 +98,6 @@ export class ProductResolver {
         return await this.productService.getProducts(memberId || null, input);
     }
 
-    // ❤️ MY FAVORITES (LIKED products)
     @UseGuards(AuthGuard)
     @Query(() => Products)
     public async getLikedProducts(
@@ -112,7 +108,6 @@ export class ProductResolver {
         return await this.productService.getLikedProducts(memberId, input);
     }
 
-    // 💾 SAVED ITEMS (SAVED products)
     @UseGuards(AuthGuard)
     @Query(() => Products)
     public async getSavedProducts(
@@ -123,7 +118,6 @@ export class ProductResolver {
         return await this.productService.getSavedProducts(memberId, input);
     }
 
-    // 👁️ VISITED PRODUCTS
     @UseGuards(AuthGuard)
     @Query(() => Products)
     public async getVisited(

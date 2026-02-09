@@ -23,6 +23,15 @@ export class FollowService {
         const targetMember = await this.memberService.getMember(null, followingId);
         if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
+        // Check if already following
+        const existing = await this.followModel.findOne({
+            followingId: followingId,
+            followerId: followerId,
+        }).exec();
+        if (existing) {
+            throw new BadRequestException('Already following this member');
+        }
+
         const result  = await this.registerSubscription(followerId, followingId);
 
         await this.memberService.memberStatsEditor({ _id: followerId, targetKey: 'memberFollowings', modifier: 1 });
@@ -38,7 +47,6 @@ export class FollowService {
                 followerId: followerId,
             });
         } catch (err) {
-            console.log("Error, Service.model:", err.message);
             throw new BadRequestException(Message.CREATE_FAILED);
         }
     }

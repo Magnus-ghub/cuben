@@ -308,7 +308,7 @@ export class PostService {
   //  YORDAMCHI METODLAR — O‘ZGARMAGAN
   // ──────────────────────────────────────────
 
-  private async postStatsEditor(input: StatisticModifier): Promise<Post> {
+  public async postStatsEditor(input: StatisticModifier): Promise<Post> {
     const { _id, targetKey, modifier } = input;
     const updated = await this.postModel
       .findByIdAndUpdate(_id, { $inc: { [targetKey]: modifier } }, { new: true })
@@ -318,7 +318,7 @@ export class PostService {
     return updated.toObject();
   }
 
-  private shapeMatchQuery(match: T, input: PostsInquiry): void {
+  public shapeMatchQuery(match: T, input: PostsInquiry): void {
     const { text, memberId } = input.search ?? {};
     if (memberId) match.memberId = shapeIntoMongoObjectId(memberId);
     if (text) {

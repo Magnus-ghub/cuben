@@ -3,6 +3,7 @@ import { IsIn, IsNotEmpty, IsOptional, Length, Min } from 'class-validator';
 import { ObjectId } from 'mongoose';
 import { Direction } from '../../enums/common.enum';
 import { availablePostSorts } from '../../config';
+import { PostStatus } from '../../enums/post.enum';
 
 @InputType()
 export class PostInput {
@@ -32,6 +33,10 @@ class PostSearch {
 	@IsOptional()
 	@Field(() => String, { nullable: true })
 	memberId?: ObjectId;
+
+	@IsOptional()
+	@Field(() => PostStatus, {nullable: true})
+	postStatus?: PostStatus;
 }
 
 @InputType()
@@ -80,4 +85,8 @@ export class AllPostsInquiry {
 	@IsOptional()
 	@Field(() => Direction, { nullable: true })
 	direction?: Direction;
+
+	@IsNotEmpty()
+	@Field(() => PostSearch) 
+	search: PostSearch;
 }

@@ -153,6 +153,14 @@ class ALPISearch{
   @IsOptional()
   @Field(() => ProductStatus, {nullable: true})
   productStatus?: ProductStatus;
+
+  @IsOptional()
+  @Field(() => ProductType, {nullable: true})
+  productType?: ProductType;
+
+  @IsOptional()
+  @Field(() => ProductCondition, {nullable: true})
+  productCondition?: ProductCondition;
 } 
 
 @InputType()

@@ -10,92 +10,137 @@ import { shapeIntoMongoObjectId } from '../../libs/config';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PostService } from './post.service';
 import { Post, Posts } from '../../libs/dto/post/post';
-import { PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
+import { AllPostsInquiry, PostInput, PostsInquiry } from '../../libs/dto/post/post.input';
 import { PostUpdate } from '../../libs/dto/post/post.update';
 import { LikeAction, LikeTarget } from '../../libs/enums/like.enum';
 
 @Resolver()
 export class PostResolver {
-	constructor(private readonly postService: PostService) {}
+  constructor(private readonly postService: PostService) {}
 
-	@UseGuards(AuthGuard)
-	@Mutation(() => Post)
-	public async createPost(@Args('input') input: PostInput, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
-		console.log('Mutation: createPost');
-		input.memberId = memberId;
-		return await this.postService.createPost(input);
-	}
+  @UseGuards(AuthGuard)
+  @Mutation(() => Post)
+  public async createPost(
+    @Args('input') input: PostInput,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    input.memberId = memberId;
+    return await this.postService.createPost(input);
+  }
 
-	@UseGuards(WithoutGuard)
-	@Query(() => Post)
-	public async getPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId | null): Promise<Post> {
-		console.log('Query: getPost');
-		const postId = shapeIntoMongoObjectId(input);
-		return await this.postService.getPost(memberId || null, postId);
-	}
+  @UseGuards(WithoutGuard)
+  @Query(() => Post)
+  public async getPost(
+    @Args('postId') input: string,
+    @AuthMember('_id') memberId: ObjectId | null,
+  ): Promise<Post> {
+    const postId = shapeIntoMongoObjectId(input);
+    return await this.postService.getPost(memberId, postId);
+  }
 
-	@UseGuards(AuthGuard)
-	@Mutation(() => Post)
-	public async updatePost(@Args('input') input: PostUpdate, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
-		console.log('Mutation: updatePost');
-		input._id = shapeIntoMongoObjectId(input._id);
-		return await this.postService.updatePost(memberId, input);
-	}
+  @UseGuards(AuthGuard)
+  @Mutation(() => Post)
+  public async updatePost(
+    @Args('input') input: PostUpdate,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    input._id = shapeIntoMongoObjectId(input._id);
+    return await this.postService.updatePost(memberId, input);
+  }
 
-	@UseGuards(AuthGuard)
-	@Mutation((returns) => Post)
-	public async removePost(
-		@Args('postId') input: string,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Post> {
-		console.log('Mutation: removePost');
-		const postId = shapeIntoMongoObjectId(input);
-		return await this.postService.removePost(postId);
-	}
+  @UseGuards(AuthGuard)
+  @Mutation(() => Post)
+  public async removePost(
+    @Args('postId') input: string,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    const postId = shapeIntoMongoObjectId(input);
+    return await this.postService.removePost(postId, memberId);
+  }
 
-	@UseGuards(WithoutGuard)
-	@Query(() => Posts)
-	public async getPosts(
-		@Args('input') input: PostsInquiry,
-		@AuthMember('_id') memberId: ObjectId | null,
-	): Promise<Posts> {
-		console.log('Query: getPosts');
-		return await this.postService.getPosts(memberId || null, input);
-	}
+  @UseGuards(WithoutGuard)
+  @Query(() => Posts)
+  public async getPosts(
+    @Args('input') input: PostsInquiry,
+    @AuthMember('_id') memberId: ObjectId | null,
+  ): Promise<Posts> {
+    return await this.postService.getPosts(memberId, input);
+  }
 
-	@UseGuards(AuthGuard)
-	@Mutation(() => Post)
-	public async likeTargetPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
-		console.log('Mutation: likeTargetPost');
-		const likeRefId = shapeIntoMongoObjectId(input);
-		return await this.postService.likeTargetPost(memberId, likeRefId);
-	}
+  @UseGuards(AuthGuard)
+  @Mutation(() => Post)
+  public async likeTargetPost(
+    @Args('postId') input: string,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    const postId = shapeIntoMongoObjectId(input);
+    return await this.postService.likeTargetPost(memberId, postId);
+  }
 
-	@UseGuards(AuthGuard)
-	@Mutation(() => Post)
-	public async saveTargetPost(@Args('postId') input: string, @AuthMember('_id') memberId: ObjectId): Promise<Post> {
-		console.log('Mutation: saveTargetPost');
-		const saveRefId = shapeIntoMongoObjectId(input);
-		return await this.postService.saveTargetPost(memberId, saveRefId);
-	}
+  @UseGuards(AuthGuard)
+  @Mutation(() => Post)
+  public async saveTargetPost(
+    @Args('postId') input: string,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    const postId = shapeIntoMongoObjectId(input);
+    return await this.postService.saveTargetPost(memberId, postId);
+  }
 
-	@UseGuards(AuthGuard)
-	@Query(() => Posts)
-	public async getLikedPosts(
-		@Args('input') input: PostsInquiry,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Posts> {
-		console.log('Query: getFavorites (LIKED posts)');
-		return await this.postService.getLikedPosts(memberId, input);
-	}
+  @UseGuards(AuthGuard)
+  @Query(() => Posts)
+  public async getLikedPosts(
+    @Args('input') input: PostsInquiry,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Posts> {
+    return await this.postService.getLikedPosts(memberId, input);
+  }
 
-	@UseGuards(AuthGuard)
-	@Query(() => Posts)
-	public async getSavedPosts(
-		@Args('input') input: PostsInquiry,
-		@AuthMember('_id') memberId: ObjectId,
-	): Promise<Posts> {
-		console.log('Query: getSavedItems (SAVED posts)');
-		return await this.postService.getSavedPosts(memberId, input);
-	}
+  @UseGuards(AuthGuard)
+  @Query(() => Posts)
+  public async getSavedPosts(
+    @Args('input') input: PostsInquiry,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Posts> {
+    return await this.postService.getSavedPosts(memberId, input);
+  }
+
+  // ──────────────────────────────────────────
+  //                  ADMIN QISMI
+  // ──────────────────────────────────────────
+
+  @Roles(MemberType.ADMIN)
+  @UseGuards(RolesGuard)
+  @Query(() => Posts)
+  public async getAllPostsByAdmin(
+    @Args('input') input: AllPostsInquiry,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Posts> {
+    return await this.postService.getAllPostsByAdmin(input);
+  }
+
+  @Roles(MemberType.ADMIN)
+  @UseGuards(RolesGuard)
+  @Mutation(() => Post)
+  public async updatePostByAdmin(
+    @Args('input') input: PostUpdate,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    input._id = shapeIntoMongoObjectId(input._id);
+    return await this.postService.updatePostByAdmin(input);
+  }
+
+  @Roles(MemberType.ADMIN)
+  @UseGuards(RolesGuard)
+  @Mutation(() => Post)
+  public async removePostByAdmin(
+    @Args('postId') input: string,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Post> {
+    const postId = shapeIntoMongoObjectId(input);
+    return await this.postService.removePostByAdmin(postId);
+  }
 }
+
+
+

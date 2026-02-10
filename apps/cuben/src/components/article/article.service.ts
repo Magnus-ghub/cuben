@@ -38,7 +38,7 @@ export class ArticleService {
 			});
 			return result;
 		} catch (err) {
-			console.log('Error, Service.model:', err.message);
+			// console.log('Error, Service.model:', err.message);
 			throw new BadRequestException(Message.CREATE_FAILED);
 		}
 	}
@@ -277,13 +277,11 @@ export class ArticleService {
 		return result;
 	}
 
-	// ❤️ MY FAVORITES
 	public async getLikedArticles(memberId: ObjectId, input: AllArticlesInquiry): Promise<Articles> {
-		console.log('📋 Getting Favorite articles (LIKED)...');
+		console.log('Getting Favorite articles (LIKED)...');
 		return await this.likeService.getFavoriteArticles(memberId, input);
 	}
 
-	// Yangi: Faqat counter update uchun (CommentService.createComment dan keyin chaqiriladi)
 	public async incrementArticleComments(articleId: ObjectId): Promise<Article> {
 		return await this.articleStatsEditor({ _id: articleId, targetKey: 'articleComments', modifier: 1 });
 	}

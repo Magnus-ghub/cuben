@@ -12,7 +12,9 @@ import { T } from './libs/types/common';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     GraphQLModule.forRoot({
       driver: ApolloDriver,
       playground: true,

@@ -21,6 +21,7 @@ registerEnumType(MemberStatus, {
 export enum MemberAuthType {
     PHONE = 'PHONE',
     EMAIL = 'EMAIL',
+    GOOGLE = 'GOOGLE',
     TELEGRAM = 'TELEGRAM',
     KAKAOTALK = 'KAKAOTALK',
 }

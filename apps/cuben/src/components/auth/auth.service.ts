@@ -1,37 +1,84 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs'; 
-import { Member } from '../../libs/dto/member/member';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
 import { T } from '../../libs/types/common';
 import { shapeIntoMongoObjectId } from '../../libs/config';
+import { Member } from '../../libs/dto/member/member';
+import { MemberDocument } from '../../schemas/Member.model';
 
 @Injectable()
 export class AuthService {
-    constructor(private jwtService: JwtService) {}
-    public async hashPassword(memberPassword: string): Promise<string> {
-        const salt = await bcrypt.genSalt();
-        return await bcrypt.hash(memberPassword, salt);
-    }
+  constructor(
+    private readonly jwtService: JwtService,
 
-    public async comparePasswords(password: string, hashedPassword: string): Promise<boolean> {
-        return await bcrypt.compare(password, hashedPassword);
-    }
+    @InjectModel('Member')
+    private readonly memberModel: Model<MemberDocument>,
+  ) {}
 
-    public async createToken(member: Member): Promise<string> {
-        const payload: T = {};
-        Object.keys(member['_doc'] ? member['_doc'] : member).map((ele) => {
-            payload[`${ele}`] = member[`${ele}`];
-        });
-        delete payload.memberPassword;
+  // ================= PASSWORD =================
 
-        return await this.jwtService.signAsync(payload);
-    }
+  public async hashPassword(memberPassword: string): Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(memberPassword, salt);
+  }
 
-    public async verifyToken(token: string): Promise<Member> {
-        const member = await this.jwtService.verifyAsync(token);
-        member._id = shapeIntoMongoObjectId(member._id);
-        return member
-    }
-    
+  public async comparePasswords(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    return await bcrypt.compare(password, hashedPassword);
+  }
+
+  // ================= JWT =================
+
+  public async createToken(member: Member): Promise<string> {
+    const payload: T = {};
+
+    const source = member['_doc'] ? member['_doc'] : member;
+
+    Object.keys(source).forEach((key) => {
+      payload[key] = source[key];
+    });
+
+    delete payload.memberPassword;
+
+    return await this.jwtService.signAsync(payload);
+  }
+
+  public async verifyToken(token: string): Promise<Member> {
+    const member = await this.jwtService.verifyAsync(token);
+    member._id = shapeIntoMongoObjectId(member._id);
+    return member;
+  }
+
+  // ================= GOOGLE LOGIN =================
+
+  async validateGoogleUser(googleUser: any) {
+  const { email, firstName, lastName, picture } = googleUser;
+
+  let member = await this.memberModel.findOne({ memberEmail: email });
+
+  if (!member) {
+    member = await this.memberModel.create({
+      memberEmail: email,
+      memberNick: firstName,
+      memberFullName: `${firstName} ${lastName}`,
+      memberImage: picture,
+      memberAuthType: 'GOOGLE',
+    });
+  }
+
+  const payload = {
+    _id: member._id,
+    memberNick: member.memberNick,
+    memberAuthType: member.memberAuthType,
+  };
+
+  const accessToken = this.jwtService.sign(payload);
+
+  return { member, accessToken };
 }
 
+}

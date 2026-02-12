@@ -3,6 +3,7 @@ import { ObjectId } from 'mongoose';
 import { Member, TotalCounter } from '../member/member';
 import { MeLiked } from '../like/like';
 import { PostStatus } from '../../enums/post.enum';
+import { MeFollowed } from '../follow/follow';
 
 
 @ObjectType()
@@ -43,6 +44,9 @@ export class Post {
 	/** from aggregation **/
 	@Field(() => MeLiked, { nullable: true })
 	meLiked?: MeLiked; 
+
+	@Field(() => [MeFollowed], { nullable: true })  
+    meFollowed?: MeFollowed[];
 
 	@Field(() => MeLiked, { nullable: true })
 	meSaved?: MeLiked; 

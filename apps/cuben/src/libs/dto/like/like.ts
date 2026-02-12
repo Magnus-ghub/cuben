@@ -4,10 +4,10 @@ import { LikeAction, LikeTarget } from '../../enums/like.enum';
 
 @ObjectType()
 export class MeLiked {
-	@Field(() => Boolean)
+	@Field(() => Boolean, { nullable: true })
 	liked: boolean;
 
-	@Field(() => Boolean)
+	@Field(() => Boolean, { nullable: true })
 	saved: boolean;
 }
 

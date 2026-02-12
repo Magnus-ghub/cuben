@@ -34,7 +34,7 @@ export class MemberService {
 			const result = await this.memberModel.create(input);
 			result.accessToken = await this.authService.createToken(result);
 			return result;
-		} catch (err) {
+		} catch (err: any) {
 			console.log('Error, Service.model:', err.message);
 			throw new BadRequestException(Message.USED_MEMBER_NICK_OR_PHONE);
 		}
@@ -65,22 +65,14 @@ export class MemberService {
 			},
 		};
 
-		// 1. Memberni topamiz
 		const targetMember = await this.memberModel.findOne(search).lean().exec();
 		if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-		const [productsCnt, articlesCnt, postsCnt] = await Promise.all([
-			this.productModel.countDocuments({ memberId: targetId, productStatus: 'ACTIVE' }),
-			this.articleModel.countDocuments({ memberId: targetId, articleStatus: 'ACTIVE' }),
-			this.postModel.countDocuments({ memberId: targetId, postStatus: 'ACTIVE' }),
-		]);
-
-		// 3. Qiymatlarni yangilaymiz
-		targetMember.memberProducts = productsCnt;
-		targetMember.memberArticles = articlesCnt;
-		targetMember.memberPosts = postsCnt;
-
-		// ... qolgan follow va like mantiqlari ...
+		if (memberId) {
+			targetMember.meFollowed = await this.checkSubscription(memberId, targetId);
+		} else {
+			targetMember.meFollowed = [];
+		}
 		return targetMember;
 	}
 

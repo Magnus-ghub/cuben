@@ -11,7 +11,7 @@ export class MeFollowed {
 	@Field(() => String)
 	followerId: ObjectId;
 
-	@Field(() => Boolean)
+	@Field(() => Boolean,{ nullable: true })
 	myFollowing: boolean;
 }
 

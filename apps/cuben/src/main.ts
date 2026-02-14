@@ -13,7 +13,7 @@ async function bootstrap() {
 	app.useGlobalInterceptors(new LoggingInterceptor());
 
 	app.enableCors({
-		origin: ['http://localhost:3000', 'https://cuben.info'],
+		origin: ['http://localhost:4000', 'https://cuben.info'],
 		credentials: true,
 	});
 

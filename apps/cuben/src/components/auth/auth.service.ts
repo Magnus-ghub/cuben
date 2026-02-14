@@ -10,75 +10,43 @@ import { MemberDocument } from '../../schemas/Member.model';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly jwtService: JwtService,
+	constructor(
+		private readonly jwtService: JwtService,
 
-    @InjectModel('Member')
-    private readonly memberModel: Model<MemberDocument>,
-  ) {}
+		@InjectModel('Member')
+		private readonly memberModel: Model<MemberDocument>,
+	) {}
 
-  // ================= PASSWORD =================
+	// ================= PASSWORD =================
 
-  public async hashPassword(memberPassword: string): Promise<string> {
-    const salt = await bcrypt.genSalt(10);
-    return await bcrypt.hash(memberPassword, salt);
-  }
+	public async hashPassword(memberPassword: string): Promise<string> {
+		const salt = await bcrypt.genSalt(10);
+		return await bcrypt.hash(memberPassword, salt);
+	}
 
-  public async comparePasswords(
-    password: string,
-    hashedPassword: string,
-  ): Promise<boolean> {
-    return await bcrypt.compare(password, hashedPassword);
-  }
+	public async comparePasswords(password: string, hashedPassword: string): Promise<boolean> {
+		return await bcrypt.compare(password, hashedPassword);
+	}
 
-  // ================= JWT =================
+	// ================= JWT =================
 
-  public async createToken(member: Member): Promise<string> {
-    const payload: T = {};
+	public async createToken(member: Member): Promise<string> {
+		const payload: T = {};
 
-    const source = member['_doc'] ? member['_doc'] : member;
+		const source = member['_doc'] ? member['_doc'] : member;
 
-    Object.keys(source).forEach((key) => {
-      payload[key] = source[key];
-    });
+		Object.keys(source).forEach((key) => {
+			payload[key] = source[key];
+		});
 
-    delete payload.memberPassword;
+		delete payload.memberPassword;
 
-    return await this.jwtService.signAsync(payload);
-  }
+		return await this.jwtService.signAsync(payload);
+	}
 
-  public async verifyToken(token: string): Promise<Member> {
-    const member = await this.jwtService.verifyAsync(token);
-    member._id = shapeIntoMongoObjectId(member._id);
-    return member;
-  }
-
-  // ================= GOOGLE LOGIN =================
-
-  async validateGoogleUser(googleUser: any) {
-  const { email, firstName, lastName, picture } = googleUser;
-
-  let member = await this.memberModel.findOne({ memberEmail: email });
-
-  if (!member) {
-    member = await this.memberModel.create({
-      memberEmail: email,
-      memberNick: firstName,
-      memberFullName: `${firstName} ${lastName}`,
-      memberImage: picture,
-      memberAuthType: 'GOOGLE',
-    });
-  }
-
-  const payload = {
-    _id: member._id,
-    memberNick: member.memberNick,
-    memberAuthType: member.memberAuthType,
-  };
-
-  const accessToken = this.jwtService.sign(payload);
-
-  return { member, accessToken };
-}
-
+	public async verifyToken(token: string): Promise<Member> {
+		const member = await this.jwtService.verifyAsync(token);
+		member._id = shapeIntoMongoObjectId(member._id);
+		return member;
+	}
 }

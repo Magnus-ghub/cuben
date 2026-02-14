@@ -3,9 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { MongooseModule } from '@nestjs/mongoose';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
 import MemberSchema from '../../schemas/Member.model';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -27,8 +25,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
   ],
-  providers: [AuthService, GoogleStrategy],
-  controllers: [AuthController],
+  providers: [AuthService],
   exports: [AuthService],
 })
 export class AuthModule {}

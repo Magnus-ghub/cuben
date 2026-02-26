@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   cuben:
-    container_name: cuben
+    container_name: univo
     restart: always
     image: node:20.10.0
     ports:
@@ -18,7 +18,7 @@ services:
     command: bash -c "rm -rf dist && npm install && npm run build && npm run start:prod"
 
   cuben-batch:
-    container_name: cuben-batch
+    container_name: univo-batch
     restart: unless-stopped
     image: node:20.10.0
     ports:

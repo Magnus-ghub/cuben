@@ -9,7 +9,7 @@ services:
       - 4001:5007
     volumes:
       - ./:/usr/src/univo
-    working_dir: /univov
+    working_dir: /univo
     
     networks:
       - monorepo-network

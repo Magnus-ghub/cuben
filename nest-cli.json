@@ -1,31 +1,31 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/cuben/src",
+  "sourceRoot": "apps/univo/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/cuben/tsconfig.app.json"
+    "tsConfigPath": "apps/univo/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/cuben",
+  "root": "apps/univo",
   "projects": {
-    "cuben": {
+    "univo": {
       "type": "application",
-      "root": "apps/cuben",
+      "root": "apps/univo",
       "entryFile": "main",
-      "sourceRoot": "apps/cuben/src",
+      "sourceRoot": "apps/univo/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/cuben/tsconfig.app.json"
+        "tsConfigPath": "apps/univo/tsconfig.app.json"
       }
     },
-    "cuben-batch": {
+    "univo-batch": {
       "type": "application",
-      "root": "apps/cuben-batch",
+      "root": "apps/univo-batch",
       "entryFile": "main",
-      "sourceRoot": "apps/cuben-batch/src",
+      "sourceRoot": "apps/univo-batch/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/cuben-batch/tsconfig.app.json"
+        "tsConfigPath": "apps/univo-batch/tsconfig.app.json"
       }
     }
   }

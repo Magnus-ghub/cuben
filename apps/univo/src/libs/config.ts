@@ -14,6 +14,8 @@ export const availableProductSorts = [
 export const availableArticleSorts = ['createdAt', 'updatedAt', 'articleLikes', 'articleViews'];
 export const availablePostSorts = ['createdAt', 'updatedAt', 'postLikes'];
 export const  availableCommentSorts = ['createdAt', 'updatedAt']
+export const availableNoticeSorts = ['createdAt', 'updatedAt'];
+export const availableNotificationSorts = ['createdAt', 'updatedAt'];
 
 // IMAGE CONFIGURATION (config.js)
 import { uuidv7 } from 'uuidv7';

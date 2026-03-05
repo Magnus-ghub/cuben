@@ -13,7 +13,7 @@
     "start:dev:batch": "nest start univo-batch --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "NODE_ENV=production node dist/apps/univo/main",
-    "start:prod:batch": "NODE_ENV=production node dist/apps/univo/main",
+    "start:prod:batch": "NODE_ENV=production node dist/apps/univo-batch/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
